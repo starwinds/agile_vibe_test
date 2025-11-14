@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, render_template_string
-from src.embedding import get_embedding
-from src.db_utils import connect, search_similar, insert_doc
+from .embedding import get_embedding
+from .db_utils import connect, search_similar, insert_doc, create_index
 import numpy as np
 import uuid
 

@@ -50,8 +50,10 @@
 모든 설정이 완료되면, 다음 명령을 사용하여 Flask 애플리케이션을 실행할 수 있습니다:
 
 ```bash
-python src/app.py
+source .venv/bin/activate && python3 -m src.app
 ```
+
+애플리케이션 시작 시 Valkey 인덱스가 자동으로 생성됩니다.
 
 애플리케이션이 성공적으로 시작되면, 터미널에 다음과 유사한 메시지가 표시됩니다:
 ```
