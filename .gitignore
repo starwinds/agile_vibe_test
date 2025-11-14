@@ -1,0 +1,22 @@
+# Secrets
+config/secrets.toml
+
+# Python virtual environment
+.venv/
+**/.venv/
+
+# Python cache
+__pycache__/
+**/__pycache__/
+
+# Pytest cache
+.pytest_cache/
+**/.pytest_cache/
+
+# Coverage report
+.coverage
+**/.coverage
+
+# Egg info
+*.egg-info/
+**/*.egg-info/
