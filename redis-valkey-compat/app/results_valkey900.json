@@ -1,0 +1,59 @@
+[
+  {
+    "scenario_name": "large_payloads",
+    "status": "OK",
+    "detail": "All large payload tests completed successfully.",
+    "metrics": {
+      "1MB": {
+        "set_latency_ms": 1.1422,
+        "get_latency_ms": 1.9187,
+        "memory_bytes": 2671416
+      },
+      "5MB": {
+        "set_latency_ms": 4.0906,
+        "get_latency_ms": 12.3578,
+        "memory_bytes": 11272608
+      },
+      "10MB": {
+        "set_latency_ms": 8.097,
+        "get_latency_ms": 20.3274,
+        "memory_bytes": 18874792
+      }
+    }
+  },
+  {
+    "scenario_name": "data_structures",
+    "status": "OK",
+    "detail": "All data structure operations passed."
+  },
+  {
+    "scenario_name": "basic_crud",
+    "status": "OK",
+    "detail": "All basic CRUD operations passed."
+  },
+  {
+    "scenario_name": "memory_eviction",
+    "status": "OK",
+    "detail": "Evicted 27 keys successfully.",
+    "metrics": {
+      "keys_before": 40,
+      "keys_after": 13,
+      "evicted_count": 27
+    }
+  },
+  {
+    "scenario_name": "scan_and_iter",
+    "status": "OK",
+    "detail": "SCAN, HSCAN, and ZSCAN iterations completed successfully."
+  },
+  {
+    "scenario_name": "pubsub",
+    "status": "OK",
+    "detail": "Message published and received successfully."
+  },
+  {
+    "scenario_name": "lua_and_tx",
+    "status": "OK",
+    "detail": "Lua scripts and transactions executed successfully."
+  }
+]

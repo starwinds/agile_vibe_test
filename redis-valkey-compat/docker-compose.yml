@@ -1,0 +1,28 @@
+# docker-compose.yml for Redis 7.2.6 and Valkey 9.0 compatibility testing
+
+# This configuration launches two services:
+# - redis726: Official Redis 7.2.6, accessible on localhost:6379
+# - valkey900: Valkey 9.0, accessible on localhost:6380
+#
+# To extend this configuration (e.g., for persistence or custom configs),
+# you can add volume mounts or command sections.
+
+version: "3.8"
+
+services:
+  redis726:
+    image: redis:7.2.6
+    container_name: redis726
+    ports:
+      - "6379:6379"
+    # Example of adding a command for custom configuration:
+    # command: redis-server --requirepass mypassword
+
+  valkey900:
+    image: valkey/valkey:9.0
+    container_name: valkey900
+    ports:
+      - "6380:6379"
+    # Valkey is a drop-in replacement, so commands are similar.
+    # Example of adding a command:
+    # command: valkey-server --requirepass mypassword

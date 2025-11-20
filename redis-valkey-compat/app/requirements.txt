@@ -1,0 +1,13 @@
+# Required Python packages for the Redis/Valkey compatibility test runner
+
+# Core client for interacting with Redis and Valkey
+redis
+
+# Used for running automated tests (future extension)
+pytest
+
+# Used for creating rich, formatted table outputs for results
+rich
+
+# Alternatively, tabulate can be used for simpler tables.
+# tabulate
