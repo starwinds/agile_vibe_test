@@ -1,0 +1,85 @@
+services:
+  node-7000: &valkey-cluster-node
+    image: valkey/valkey:7.2-alpine
+    command: valkey-server /etc/valkey/valkey.conf
+    volumes:
+      - ./config/valkey-cluster.conf:/etc/valkey/valkey.conf
+      - node-7000-data:/data
+    ports:
+      - "7000:6379"
+      - "17000:16379"
+    networks:
+      - valkey-cluster-net
+
+  node-7001:
+    <<: *valkey-cluster-node
+    volumes:
+      - ./config/valkey-cluster.conf:/etc/valkey/valkey.conf
+      - node-7001-data:/data
+    ports:
+      - "7001:6379"
+      - "17001:16379"
+
+  node-7002:
+    <<: *valkey-cluster-node
+    volumes:
+      - ./config/valkey-cluster.conf:/etc/valkey/valkey.conf
+      - node-7002-data:/data
+    ports:
+      - "7002:6379"
+      - "17002:16379"
+
+  node-7003:
+    <<: *valkey-cluster-node
+    volumes:
+      - ./config/valkey-cluster.conf:/etc/valkey/valkey.conf
+      - node-7003-data:/data
+    ports:
+      - "7003:6379"
+      - "17003:16379"
+
+  node-7004:
+    <<: *valkey-cluster-node
+    volumes:
+      - ./config/valkey-cluster.conf:/etc/valkey/valkey.conf
+      - node-7004-data:/data
+    ports:
+      - "7004:6379"
+      - "17004:16379"
+
+  node-7005:
+    <<: *valkey-cluster-node
+    volumes:
+      - ./config/valkey-cluster.conf:/etc/valkey/valkey.conf
+      - node-7005-data:/data
+    ports:
+      - "7005:6379"
+      - "17005:16379"
+
+  cluster-initializer:
+    image: valkey/valkey:7.2-alpine
+    container_name: cluster-initializer
+    volumes:
+      - ./config/cluster-init.sh:/usr/local/bin/cluster-init.sh
+    command: /usr/local/bin/cluster-init.sh
+    depends_on:
+      - node-7000
+      - node-7001
+      - node-7002
+      - node-7003
+      - node-7004
+      - node-7005
+    networks:
+      - valkey-cluster-net
+
+networks:
+  valkey-cluster-net:
+    driver: bridge
+
+volumes:
+  node-7000-data:
+  node-7001-data:
+  node-7002-data:
+  node-7003-data:
+  node-7004-data:
+  node-7005-data:

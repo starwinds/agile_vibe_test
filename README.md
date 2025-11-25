@@ -4,15 +4,18 @@
 
 ## 프로젝트 구조
 
-이 저장소는 두 개의 주요 하위 프로젝트로 나뉩니다:
+이 저장소는 여러 하위 프로젝트로 나뉩니다:
 
 -   `pg_agile_test/`: **PostgreSQL + pgvector**를 사용하는 QA 서비스 구현체입니다.
 -   `valkey_agile_test/`: **Valkey**를 사용하는 QA 서비스 구현체입니다.
+-   `redis-valkey-compat/`: **Redis와 Valkey 간의 호환성**을 테스트하는 프로젝트입니다.
+    -   `docs/comprehensive_test_report.md`: Redis 7.2.6과 Valkey 9.0.0 간의 상세 성능 및 호환성 테스트 결과를 포함합니다.
+-   `valkey-ha-and-cluster/`: **Valkey의 고가용성(HA) 및 클러스터 모드**를 테스트하고 구현하는 프로젝트입니다.
 
-두 프로젝트 모두 유사한 아키텍처를 공유하며 다음으로 구성됩니다:
+각 프로젝트는 유사한 아키텍처를 공유하며 다음으로 구성됩니다:
 
--   주요 애플리케이션 로직을 포함하는 `src` 디렉토리.
--   단위 테스트가 있는 `tests` 디렉토리.
+-   주요 애플리케이션 로직을 포함하는 `src` 또는 `app` 디렉토리.
+-   단위 테스트가 있는 `tests` 디렉토리 (해당하는 경우).
 -   프로젝트 문서를 위한 `docs` 디렉토리.
 -   Python 종속성을 나열하는 `requirements.txt` 파일.
 
@@ -21,6 +24,8 @@
 -   **질의응답:** 데이터베이스에 저장된 문서를 기반으로 질문하고 답변을 받습니다.
 -   **문서 제출:** 기술 자료에 새 문서를 추가합니다.
 -   **벡터 유사도 검색:** 벡터 임베딩을 활용하여 주어진 질문에 가장 관련성이 높은 문서를 찾습니다.
+-   **Redis/Valkey 호환성 테스트:** 기본 CRUD, Pub/Sub, Lua 스크립트, 대용량 페이로드 처리 등 다양한 시나리오에서 호환성을 검증합니다.
+-   **Valkey HA/클러스터:** Sentinel을 이용한 고가용성 구성과 클러스터 모드 구성을 테스트합니다.
 
 ## 기술 스택
 
@@ -28,8 +33,9 @@
 -   **벡터 임베딩:** Hugging Face Transformers
 -   **데이터베이스:**
     -   PostgreSQL (`pgvector` 확장 기능 포함)
-    -   Valkey
+    -   Valkey / Redis
 -   **테스팅:** Pytest
+-   **인프라:** Docker, Docker Compose
 
 ## 설치 및 사용법
 
