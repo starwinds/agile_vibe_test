@@ -72,5 +72,6 @@ Always write one test at a time, make it run, then improve structure. Always run
 
 # git push rule
 0. commit되지 않은 변경 사항이 있다면, 문서내의 COMMIT DISCIPLINE에 따라서 commit 진행 
-1. config/secrets.toml의 my_github_url 정보 참조해서 진행. public repo로 설정되어있음.
+1. git hub token 기반 진행: secrets.toml의 my_token 정보 활용
 2. 변경 사항에 대해 readme file 업데이트
+3. git push이후 token에 대한 참조 초기화
