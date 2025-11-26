@@ -21,9 +21,15 @@ class HAClient:
         try:
             self.master = self.sentinel.master_for(self.master_name, socket_timeout=0.5)
             self.replica = self.sentinel.slave_for(self.master_name, socket_timeout=0.5)
+            
+            # Get addresses directly from Sentinel for display
+            self.master_address = self.sentinel.discover_master(self.master_name)
+            slaves = self.sentinel.discover_slaves(self.master_name)
+            self.replica_address = slaves[0] if slaves else None
+
             util.print_ok(f"Discovered Master: {self.get_master_address()}")
             util.print_ok(f"Discovered Replica: {self.get_replica_address()}")
-        except redis.exceptions.MasterNotFoundError:
+        except redis.sentinel.MasterNotFoundError:
             util.print_fail("Master not found by Sentinel.")
             raise
         except redis.exceptions.ConnectionError as e:
@@ -32,14 +38,14 @@ class HAClient:
 
     def get_master_address(self):
         """Returns the address of the current master."""
-        if self.master:
-            return f"{self.master.connection_pool.connection_kwargs['host']}:{self.master.connection_pool.connection_kwargs['port']}"
+        if self.master_address:
+            return f"{self.master_address[0]}:{self.master_address[1]}"
         return "N/A"
 
     def get_replica_address(self):
         """Returns the address of a replica."""
-        if self.replica:
-            return f"{self.replica.connection_pool.connection_kwargs['host']}:{self.replica.connection_pool.connection_kwargs['port']}"
+        if self.replica_address:
+            return f"{self.replica_address[0]}:{self.replica_address[1]}"
         return "N/A"
 
     @backoff.on_exception(backoff.expo, redis.exceptions.ConnectionError, max_tries=5)

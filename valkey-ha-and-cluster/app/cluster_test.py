@@ -5,9 +5,9 @@ from lib import util
 
 # Cluster configuration
 STARTUP_NODES = [
-    {"host": "localhost", "port": 7000},
-    {"host": "localhost", "port": 7001},
-    {"host": "localhost", "port": 7002},
+    {"host": "node-7000", "port": 6379},
+    {"host": "node-7001", "port": 6379},
+    {"host": "node-7002", "port": 6379},
 ]
 
 def run_cluster_test():

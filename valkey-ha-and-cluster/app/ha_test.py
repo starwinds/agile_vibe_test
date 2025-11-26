@@ -4,7 +4,7 @@ from lib.ha_client import HAClient
 from lib import util
 
 # Sentinel and Master configuration
-SENTINELS = [("localhost", 26379), ("localhost", 26380), ("localhost", 26381)]
+SENTINELS = [("valkey-sentinel1", 26379), ("valkey-sentinel2", 26379), ("valkey-sentinel3", 26379)]
 MASTER_NAME = "myvalkey"
 TEST_KEY = "ha_test_key"
 TEST_VALUE = "hello_ha"

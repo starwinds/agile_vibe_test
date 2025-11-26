@@ -4,7 +4,7 @@ services:
     container_name: valkey-master
     ports:
       - "6379:6379"
-    command: valkey-server
+    command: valkey-server --replica-announce-ip 127.0.0.1 --replica-announce-port 6379
     networks:
       - valkey-ha-net
     healthcheck:
@@ -18,7 +18,7 @@ services:
     container_name: valkey-replica1
     ports:
       - "6380:6379"
-    command: valkey-server --replicaof valkey-master 6379
+    command: valkey-server --replicaof valkey-master 6379 --replica-announce-ip 127.0.0.1 --replica-announce-port 6380
     depends_on:
       valkey-master:
         condition: service_healthy
@@ -30,7 +30,7 @@ services:
     container_name: valkey-replica2
     ports:
       - "6381:6379"
-    command: valkey-server --replicaof valkey-master 6379
+    command: valkey-server --replicaof valkey-master 6379 --replica-announce-ip 127.0.0.1 --replica-announce-port 6381
     depends_on:
       valkey-master:
         condition: service_healthy
@@ -72,6 +72,17 @@ services:
     entrypoint: /usr/local/bin/sentinel-entrypoint.sh
     networks:
       - valkey-ha-net
+
+  ha-test-client:
+    build: ./app
+    container_name: ha-test-client
+    depends_on:
+      - valkey-master
+      - valkey-sentinel1
+    networks:
+      - valkey-ha-net
+    profiles:
+      - test
 
 networks:
   valkey-ha-net:

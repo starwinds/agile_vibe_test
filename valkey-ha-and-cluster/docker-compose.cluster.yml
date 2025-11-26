@@ -72,6 +72,18 @@ services:
     networks:
       - valkey-cluster-net
 
+  cluster-test-client:
+    build:
+      context: ./app
+      dockerfile: Dockerfile.cluster
+    container_name: cluster-test-client
+    depends_on:
+      - cluster-initializer
+    networks:
+      - valkey-cluster-net
+    profiles:
+      - test
+
 networks:
   valkey-cluster-net:
     driver: bridge
