@@ -7,10 +7,13 @@ Valkey HA(Sentinel) 및 Cluster 환경의 동작을 검증했습니다. Docker C
 
 ### HA 환경
 - **Sentinel 설정:** `sentinel-entrypoint.sh`를 수정하여 마스터 IP를 동적으로 resolve하도록 변경
-- **Docker Compose:** `replica-announce-ip` 및 `replica-announce-port` 설정 추가
+- **Docker Compose:** Docker 소켓(`/var/run/docker.sock`)을 테스트 컨테이너에 마운트
+- **Dockerfile:** Docker CLI 설치 추가
 - **테스트 클라이언트:** Docker 컨테이너로 실행하여 내부 네트워크 접근 문제 해결
 
 ### Cluster 환경
+- **Docker Compose:** Docker 소켓 마운트 추가
+- **Dockerfile:** Docker CLI 설치 추가
 - **테스트 클라이언트:** `cluster_test.py`를 Docker 컨테이너로 실행하도록 설정
 
 ## 테스트 결과
@@ -21,10 +24,10 @@ Valkey HA(Sentinel) 및 Cluster 환경의 동작을 검증했습니다. Docker C
 - ✅ **Sentinel 연결:** Sentinel을 통해 마스터 및 레플리카 발견 성공
 - ✅ **CRUD 작업:** 마스터에 데이터 쓰기 및 읽기 성공
 - ✅ **복제 확인:** 레플리카에서 데이터 읽기 성공, 마스터와 동기화 확인
-
-#### 제한 사항
-- ⚠️ **Failover 테스트:** 컨테이너 내부에서 `docker kill` 명령을 실행할 수 없어 자동 Failover 검증 불가
-  - 수동으로 호스트에서 `docker kill valkey-master` 실행 시 Sentinel이 새 마스터를 선출하는 것은 확인됨
+- ✅ **자동 Failover:** 마스터 종료 시 Sentinel이 레플리카를 새 마스터로 승격
+  - 이전 마스터: `172.23.0.2:6379`
+  - 새 마스터: `172.23.0.6:6379`
+  - Sentinel 로그에서 `+promoted-slave` 및 `+failover-end` 확인
 
 ### 2. Cluster 테스트
 
@@ -35,12 +38,11 @@ Valkey HA(Sentinel) 및 Cluster 환경의 동작을 검증했습니다. Docker C
 
 #### 제한 사항
 - ⚠️ **키 분산 통계:** `redis-py-cluster` 라이브러리의 `get_nodes()` 메서드 미지원으로 노드별 키 분포 확인 불가
-- ⚠️ **Failover 테스트:** `keyslot()` 메서드 미지원 및 Docker 명령 제약으로 자동 Failover 검증 불가
+- ⚠️ **Failover 테스트:** `keyslot()` 메서드 미지원으로 자동 Failover 검증 불가
 
 ## 결론
-Valkey HA 및 Cluster의 핵심 기능(데이터 저장/조회, 복제, 분산)이 정상적으로 작동함을 확인했습니다. 자동 Failover 기능은 환경 제약으로 인해 완전히 검증하지 못했으나, 인프라 구성은 정상적으로 완료되었습니다.
+Valkey HA의 핵심 기능(데이터 저장/조회, 복제, **자동 Failover**)이 정상적으로 작동함을 확인했습니다. Cluster의 기본 기능(분산, 리디렉션)도 검증되었으나, Failover는 라이브러리 제약으로 완전히 검증하지 못했습니다.
 
 ## 향후 개선 사항
-1. `redis` 라이브러리를 최신 버전으로 업그레이드하여 API 호환성 개선
-2. Failover 테스트를 위한 별도의 관리 컨테이너 추가 고려
-3. 호스트 네트워크 모드 사용 또는 포트 매핑 최적화 검토
+1. `redis-py-cluster` 대신 최신 `redis-py` 라이브러리로 업그레이드하여 Cluster 기능 완전 지원
+2. 프로덕션 환경에서는 Docker 소켓 마운트 대신 다른 방식의 Failover 테스트 고려

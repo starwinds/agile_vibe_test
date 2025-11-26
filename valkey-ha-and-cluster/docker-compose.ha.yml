@@ -4,7 +4,7 @@ services:
     container_name: valkey-master
     ports:
       - "6379:6379"
-    command: valkey-server --replica-announce-ip 127.0.0.1 --replica-announce-port 6379
+    command: valkey-server
     networks:
       - valkey-ha-net
     healthcheck:
@@ -18,7 +18,7 @@ services:
     container_name: valkey-replica1
     ports:
       - "6380:6379"
-    command: valkey-server --replicaof valkey-master 6379 --replica-announce-ip 127.0.0.1 --replica-announce-port 6380
+    command: valkey-server --replicaof valkey-master 6379
     depends_on:
       valkey-master:
         condition: service_healthy
@@ -30,7 +30,7 @@ services:
     container_name: valkey-replica2
     ports:
       - "6381:6379"
-    command: valkey-server --replicaof valkey-master 6379 --replica-announce-ip 127.0.0.1 --replica-announce-port 6381
+    command: valkey-server --replicaof valkey-master 6379
     depends_on:
       valkey-master:
         condition: service_healthy
@@ -76,6 +76,8 @@ services:
   ha-test-client:
     build: ./app
     container_name: ha-test-client
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - valkey-master
       - valkey-sentinel1

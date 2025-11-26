@@ -1,5 +1,8 @@
 FROM python:3.12-slim
 
+# Docker CLI 설치
+RUN apt-get update && apt-get install -y docker.io && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY requirements.txt .
