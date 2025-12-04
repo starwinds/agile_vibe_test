@@ -1,26 +1,39 @@
-from rediscluster import RedisCluster
+from redis.cluster import RedisCluster, ClusterNode
 from redis.exceptions import ConnectionError
 import backoff
 from . import util
 
 class ClusterClient:
-    def __init__(self, startup_nodes):
+    def __init__(self, startup_nodes, **kwargs):
         self.startup_nodes = startup_nodes
         self.client = None
-        self.connect()
+        self.connect(**kwargs)
 
     @backoff.on_exception(backoff.expo, ConnectionError, max_tries=8)
-    def connect(self):
+    def connect(self, **kwargs):
         """
         Connects to the Valkey cluster.
         Uses backoff for resilience against temporary unavailability during setup.
         """
         util.print_step("Connecting to Valkey Cluster")
         try:
+            # redis-py requires startup_nodes to be ClusterNode objects or similar
+            # It can also take a list of dicts if formatted correctly, but let's be explicit if needed.
+            # actually redis-py RedisCluster startup_nodes arg expects ClusterNode objects
+            # OR a list of dicts with 'host' and 'port'.
+            # Let's try passing the list of dicts directly as it matches the signature mostly,
+            # but we need to be careful about the arguments.
+            
+            # Convert dicts to ClusterNode if needed, or just pass host/port.
+            # redis-py RedisCluster init:
+            # __init__(self, host: Optional[str] = None, port: int = 6379, startup_nodes: Optional[List[ClusterNode]] = None, ...)
+            
+            nodes = [ClusterNode(n['host'], n['port']) for n in self.startup_nodes]
+
             self.client = RedisCluster(
-                startup_nodes=self.startup_nodes,
+                startup_nodes=nodes,
                 decode_responses=True,
-                skip_full_coverage_check=True
+                **kwargs
             )
             # Check connection
             self.client.ping()
@@ -60,30 +73,36 @@ class ClusterClient:
         util.print_step("Getting key distribution across cluster nodes")
         try:
             distribution = {}
-            # The keys() method in redis-py-cluster returns keys from all nodes
-            all_keys = self.client.keys('*')
+            # Use scan_iter to ensure we get keys from all nodes
+            all_keys = list(self.client.scan_iter(match='*'))
             
             # This is a simplified way. A more accurate way would be to query each primary.
             # For this test, we'll group by which node the client thinks the key is in.
-            node_map = self.client.get_nodes()
-            for node in node_map:
+            # redis-py's get_nodes() returns a list of ClusterNode objects
+            nodes = self.client.get_nodes()
+            
+            for node in nodes:
                 distribution[f"{node.host}:{node.port}"] = 0
 
             for key in all_keys:
+                # keyslot() is available on the cluster client
                 slot = self.client.keyslot(key)
-                # Find which node owns this slot
-                for node in node_map:
-                    if slot in node.slots:
-                        addr = f"{node.host}:{node.port}"
-                        if addr in distribution:
-                            distribution[addr] += 1
-                        else: # Should not happen if map is correct
-                            distribution[addr] = 1
-                        break
-            
+                
+                # get_node_from_slot is available via nodes_manager in redis-py
+                owner_node = self.client.nodes_manager.get_node_from_slot(slot)
+                
+                if owner_node:
+                     addr = f"{owner_node.host}:{owner_node.port}"
+                     if addr in distribution:
+                         distribution[addr] += 1
+                     else:
+                         distribution[addr] = 1
+                
             util.print_ok("Successfully retrieved key distribution.")
             return distribution
 
         except Exception as e:
             util.print_fail(f"Could not get key distribution: {e}")
             return {}
+
+

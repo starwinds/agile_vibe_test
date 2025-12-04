@@ -1,4 +1,4 @@
 redis
-redis-py-cluster
+redis>=5.0.0
 rich
 backoff

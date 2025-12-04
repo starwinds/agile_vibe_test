@@ -1,5 +1,7 @@
 import os
 import time
+import json
+import subprocess
 from lib.cluster_client import ClusterClient
 from lib import util
 
@@ -18,7 +20,7 @@ def run_cluster_test():
     # 1. Initial Connection
     util.print_step("Initializing ClusterClient")
     try:
-        client = ClusterClient(startup_nodes=STARTUP_NODES)
+        client = ClusterClient(startup_nodes=STARTUP_NODES, cluster_error_retry_attempts=3)
     except Exception as e:
         util.print_fail(f"Could not initialize ClusterClient: {e}")
         return
@@ -50,26 +52,63 @@ def run_cluster_test():
     # Find a primary node to kill. Let's target the one holding 'key-0'.
     try:
         key0_slot = client.client.keyslot('key-0')
-        target_node_info = client.client.get_node_from_slot(key0_slot)
+        target_node_info = client.client.nodes_manager.get_node_from_slot(key0_slot)
         
-        # This gives host and port, but we need the container name.
-        # We'll make an assumption based on port.
-        target_port = target_node_info['port']
-        target_container = f"node-{target_port}"
+        # This gives host and port. Host is likely an IP.
+        # We need to find the container name from this IP to kill it.
+        target_ip = target_node_info.host
+        target_port = target_node_info.port
+        
+        util.print_info(f"Target node IP: {target_ip}, Port: {target_port}")
+        
+        target_container = None
+        try:
+            cmd = "docker network inspect valkey-ha-and-cluster_valkey-cluster-net"
+            result = subprocess.check_output(cmd, shell=True)
+            network_data = json.loads(result)
+            for container_id, container in network_data[0]['Containers'].items():
+                if container['IPv4Address'].split('/')[0] == target_ip:
+                    target_container = container['Name']
+                    break
+        except Exception as e:
+             util.print_fail(f"Failed to inspect docker network: {e}")
 
-        util.print_info(f"Key 'key-0' is on node at port {target_port}. Targeting container [bold]{target_container}[/bold] for failure simulation.")
+        if not target_container:
+             # Fallback or error
+             target_container = f"node-{target_port}" # This was the old assumption
+             util.print_fail(f"Could not resolve container name for IP {target_ip}. Trying fallback {target_container}")
+
+        util.print_info(f"Key 'key-0' is on node {target_ip}:{target_port}. Targeting container [bold]{target_container}[/bold] for failure simulation.")
 
         util.print_step(f"Killing container {target_container}")
         os.system(f"docker kill {target_container}")
         util.print_ok(f"`docker kill {target_container}` executed.")
 
-        util.sleep_with_message(15, "Waiting for cluster to promote a replica")
+        util.sleep_with_message(30, "Waiting for cluster to promote a replica")
 
-        util.print_step("Attempting to get 'key-0' after failover")
-        value = client.get_value("key-0")
+        # util.print_step("Re-initializing client to verify cluster recovery")
+        # try:
+        #     client = ClusterClient(startup_nodes=STARTUP_NODES)
+        # except Exception as e:
+        #     util.print_fail(f"Could not re-initialize ClusterClient: {e}")
+        #     return
 
-        if value == "value-0":
-            util.print_ok("Successfully retrieved 'key-0' after failover. The cluster recovered.")
+        util.print_step("Attempting to get 'key-0' after failover (expecting auto-recovery)")
+        
+        # Retry loop for failover recovery
+        max_retries = 20
+        for attempt in range(max_retries):
+            try:
+                value = client.get_value("key-0")
+                if value == "value-0":
+                    util.print_ok("Successfully retrieved 'key-0' after failover. The cluster recovered.")
+                    break
+                else:
+                    util.print_info(f"Attempt {attempt+1}/{max_retries}: Got unexpected value '{value}'. Retrying in 5s...")
+            except Exception as e:
+                util.print_info(f"Attempt {attempt+1}/{max_retries}: Error retrieving key ({e}). Retrying in 5s...")
+            
+            time.sleep(5)
         else:
             util.print_fail("Failed to retrieve 'key-0' after failover.")
 
