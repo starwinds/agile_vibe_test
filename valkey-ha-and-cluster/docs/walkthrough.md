@@ -35,14 +35,16 @@ Valkey HA(Sentinel) 및 Cluster 환경의 동작을 검증했습니다. Docker C
 - ✅ **클러스터 연결:** 6개 노드(Primary 3, Replica 3) 클러스터 구성 성공
 - ✅ **키 분산:** 20개의 키를 클러스터 전체에 분산 저장 성공
 - ✅ **리디렉션:** `MOVED` 리디렉션이 자동으로 처리되어 키 조회/저장 성공
+- ✅ **키 분산 통계:** `redis-py` 마이그레이션 및 `scan_iter()` 사용으로 노드별 키 분포 확인 성공
+- ✅ **Failover 테스트:** Primary 노드 종료 시 클라이언트가 자동으로 토폴로지를 업데이트하고 Replica(새 Primary)로 연결하여 데이터 조회 성공
+  - 클라이언트 설정: `cluster_error_retry_attempts` 옵션 사용 및 재시도 로직 개선으로 자동 복구 검증
 
-#### 제한 사항
-- ⚠️ **키 분산 통계:** `redis-py-cluster` 라이브러리의 `get_nodes()` 메서드 미지원으로 노드별 키 분포 확인 불가
-- ⚠️ **Failover 테스트:** `keyslot()` 메서드 미지원으로 자동 Failover 검증 불가
+
 
 ## 결론
-Valkey HA의 핵심 기능(데이터 저장/조회, 복제, **자동 Failover**)이 정상적으로 작동함을 확인했습니다. Cluster의 기본 기능(분산, 리디렉션)도 검증되었으나, Failover는 라이브러리 제약으로 완전히 검증하지 못했습니다.
+Valkey HA의 핵심 기능(데이터 저장/조회, 복제, **자동 Failover**)이 정상적으로 작동함을 확인했습니다. Cluster의 기본 기능(분산, 리디렉션, **키 분산 통계**) 및 **자동 Failover** 기능 또한 클라이언트의 자동 복구 메커니즘을 통해 정상 작동함을 검증했습니다.
 
 ## 향후 개선 사항
-1. `redis-py-cluster` 대신 최신 `redis-py` 라이브러리로 업그레이드하여 Cluster 기능 완전 지원
+1. [완료] `redis-py-cluster` 대신 최신 `redis-py` 라이브러리로 업그레이드하여 Cluster 기능 완전 지원
+2. [완료] Cluster Failover 테스트 개선: 클라이언트 토폴로지 자동 업데이트 메커니즘 조사 및 적용 (재시도 로직 및 설정 최적화로 해결)
 2. 프로덕션 환경에서는 Docker 소켓 마운트 대신 다른 방식의 Failover 테스트 고려

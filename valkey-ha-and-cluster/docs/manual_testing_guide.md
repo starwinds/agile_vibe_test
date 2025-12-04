@@ -208,7 +208,35 @@ docker exec node-7002 valkey-cli -p 6379 DBSIZE
 **확인 사항:**
 - 키가 여러 노드에 분산되어 저장되어야 함
 
-### 2.8 환경 정리
+### 2.8 자동 Failover 테스트
+
+#### 1단계: 마스터 노드 확인
+```bash
+docker exec node-7000 valkey-cli -p 6379 CLUSTER NODES | grep master
+```
+임의의 마스터 노드 ID와 IP를 확인합니다 (예: `node-7000`).
+
+#### 2단계: 마스터 노드 종료
+```bash
+docker kill valkey-ha-and-cluster-node-7000-1
+```
+*주의: 컨테이너 이름은 `docker ps`로 확인 필요할 수 있음*
+
+#### 3단계: Failover 대기 (약 15-30초)
+```bash
+sleep 30
+```
+
+#### 4단계: 클러스터 상태 확인 (다른 노드에서)
+```bash
+docker exec node-7001 valkey-cli -p 6379 CLUSTER NODES
+```
+
+**확인 사항:**
+- 종료된 노드가 `fail` 상태로 표시됨
+- 해당 노드의 레플리카가 새로운 마스터(`master`)로 승격됨
+
+### 2.9 환경 정리
 
 ```bash
 docker-compose -f docker-compose.cluster.yml down
@@ -244,6 +272,11 @@ docker-compose -f docker-compose.cluster.yml up -d
 sleep 15
 
 # 테스트 실행
+# 이 스크립트는 다음 항목을 자동으로 검증합니다:
+# 1. 클러스터 연결
+# 2. 키 분산 및 리디렉션
+# 3. 키 분산 통계 (노드별 키 개수)
+# 4. 자동 Failover (노드 장애 시 복구)
 docker-compose -f docker-compose.cluster.yml --profile test run --rm cluster-test-client
 
 # 환경 정리
@@ -324,3 +357,6 @@ docker exec -it valkey-master valkey-cli
 - [ ] 3개 마스터, 3개 레플리카 확인
 - [ ] 데이터 분산 저장 확인
 - [ ] 리디렉션 자동 처리 확인
+- [ ] 키 분산 통계 확인 (Python 스크립트)
+- [ ] 키 분산 통계 확인 (Python 스크립트)
+- [ ] 자동 Failover 및 복구 확인 (수동 및 Python 스크립트)
