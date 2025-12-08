@@ -1,0 +1,34 @@
+db: Valkey
+db_config:
+  host: 127.0.0.1
+  port: 6379
+  password: null
+
+cases:
+  - case_id: 1
+    label: valkey-hnsw-m16-ef200
+    dataset:
+      name: glove-100-angular
+      size: 10000
+      dim: 100
+    db_case_config:
+      index_name: vdbbench_idx_hnsw
+      prefix: "doc:"
+      M: 16
+      EF_CONSTRUCTION: 200
+      EF_RUNTIME: 10
+      distance_metric: COSINE
+
+#   - case_id: 2
+#     label: valkey-flat
+#     dataset:
+#       name: glove-100-angular
+#       size: 10000
+#       dim: 100
+#     db_case_config:
+#       index_name: vdbbench_idx_flat
+#       prefix: "doc_flat:"
+#       M: 16 # Not used for FLAT but required by config class defaults if not careful, but here we use same config class
+#       EF_CONSTRUCTION: 200
+#       EF_RUNTIME: 10
+#       distance_metric: COSINE
