@@ -11,7 +11,7 @@
 -   `redis-valkey-compat/`: **Redis와 Valkey 간의 호환성**을 테스트하는 프로젝트입니다.
     -   `docs/comprehensive_test_report.md`: Redis 7.2.6과 Valkey 9.0.0 간의 상세 성능 및 호환성 테스트 결과를 포함합니다.
 -   `valkey-ha-and-cluster/`: **Valkey의 고가용성(HA) 및 클러스터 모드**를 테스트하고 구현하는 프로젝트입니다.
--   `valkey-vector-benchmark/`: **VectorDBBench**를 확장하여 Valkey Vector Search 성능을 벤치마킹하는 프로젝트입니다.
+-   `valkey-vector-benchmark/`: **VectorDBBench**를 확장하여 Valkey Vector Search 성능을 벤치마킹하는 프로젝트입니다. ([가이드 보기](valkey-vector-benchmark/docs/manual_benchmark_guide.md))
 
 각 프로젝트는 유사한 아키텍처를 공유하며 다음으로 구성됩니다:
 

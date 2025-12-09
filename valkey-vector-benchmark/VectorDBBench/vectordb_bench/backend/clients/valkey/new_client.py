@@ -3,6 +3,8 @@ import time
 from typing import Any, Iterable, List
 from contextlib import contextmanager
 import valkey
+from valkey.cluster import ValkeyCluster
+from valkey.sentinel import Sentinel
 from valkey.commands.search.field import TagField, NumericField, VectorField
 from valkey.commands.search.indexDefinition import IndexDefinition, IndexType
 from valkey.commands.search.query import Query
@@ -10,7 +12,7 @@ import numpy as np
 
 from ...utils import time_it
 from ..api import VectorDB, DBCaseConfig
-from .config import ValkeyDBConfig, ValkeyDBCaseConfig
+from .config import ValkeyDBConfig, ValkeyDBCaseConfig, DeploymentType
 
 log = logging.getLogger(__name__)
 
@@ -30,12 +32,7 @@ class ValkeyClient(VectorDB):
         self.prefix = db_case_config.prefix
         
         # Initialize connection for setup
-        self.client = valkey.Valkey(
-            host=db_config.host,
-            port=db_config.port,
-            password=db_config.password.get_secret_value() if db_config.password else None,
-            decode_responses=True
-        )
+        self.client = self._get_client()
 
         if drop_old:
             self.cleanup()
@@ -44,14 +41,41 @@ class ValkeyClient(VectorDB):
         self.client.close()
         self.client = None
 
+    def _get_client(self):
+        if self.db_config.deployment_type == DeploymentType.CLUSTER:
+            startup_nodes = []
+            for node in self.db_config.nodes:
+                host, port = node.split(":")
+                startup_nodes.append({"host": host, "port": int(port)})
+            
+            return ValkeyCluster(
+                startup_nodes=startup_nodes,
+                decode_responses=True,
+                password=self.db_config.password.get_secret_value() if self.db_config.password else None
+            )
+        elif self.db_config.deployment_type == DeploymentType.SENTINEL:
+            sentinels = []
+            for node in self.db_config.nodes:
+                host, port = node.split(":")
+                sentinels.append((host, int(port)))
+            
+            sentinel = Sentinel(
+                sentinels,
+                decode_responses=True,
+                password=self.db_config.password.get_secret_value() if self.db_config.password else None
+            )
+            return sentinel.master_for(self.db_config.service_name, decode_responses=True)
+        else:
+            return valkey.Valkey(
+                host=self.db_config.host,
+                port=self.db_config.port,
+                password=self.db_config.password.get_secret_value() if self.db_config.password else None,
+                decode_responses=True
+            )
+
     @contextmanager
     def init(self) -> None:
-        self.client = valkey.Valkey(
-            host=self.db_config.host,
-            port=self.db_config.port,
-            password=self.db_config.password.get_secret_value() if self.db_config.password else None,
-            decode_responses=True
-        )
+        self.client = self._get_client()
         yield
         self.client.close()
         self.client = None
