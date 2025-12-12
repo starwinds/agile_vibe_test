@@ -5,19 +5,19 @@ db_config:
   password: null
 
 cases:
-#   - case_id: 1
-#     label: valkey-hnsw-m16-ef200
-#     dataset:
-#       name: glove-100-angular
-#       size: 10000
-#       dim: 100
-#     db_case_config:
-#       index_name: vdbbench_idx_hnsw
-#       prefix: "doc:"
-#       M: 16
-#       EF_CONSTRUCTION: 200
-#       EF_RUNTIME: 10
-#       distance_metric: COSINE
+  - case_id: 1
+    label: valkey-hnsw-m16-ef200
+    dataset:
+      name: glove-100-angular
+      size: 10000
+      dim: 100
+    db_case_config:
+      index_name: vdbbench_idx_hnsw
+      prefix: "doc:"
+      M: 16
+      EF_CONSTRUCTION: 200
+      EF_RUNTIME: 10
+      distance_metric: COSINE
 
 #   - case_id: 2
 #     label: valkey-flat
@@ -56,25 +56,3 @@ cases:
 #       EF_CONSTRUCTION: 200
 #       EF_RUNTIME: 10
 #       distance_metric: COSINE
-
-  - case_id: 4
-    label: valkey-ha-hnsw
-    dataset:
-      name: glove-100-angular
-      size: 10000
-      dim: 100
-    db_config:
-      deployment_type: SENTINEL
-      nodes:
-        - "127.0.0.1:26379"
-        - "127.0.0.1:26380"
-        - "127.0.0.1:26381"
-      service_name: "myvalkey"
-      password: null
-    db_case_config:
-      index_name: vdbbench_idx_ha
-      prefix: "doc_ha:"
-      M: 16
-      EF_CONSTRUCTION: 200
-      EF_RUNTIME: 10
-      distance_metric: COSINE

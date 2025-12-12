@@ -1,7 +1,7 @@
 services:
   node-7000: &valkey-cluster-node
-    image: redis/redis-stack-server:latest
-    command: redis-server /etc/valkey/valkey.conf --loadmodule /opt/redis-stack/lib/redisearch.so --loadmodule /opt/redis-stack/lib/rejson.so
+    image: valkey/valkey-bundle:latest
+    command: valkey-server /etc/valkey/valkey.conf
     volumes:
       - ./config/valkey-cluster.conf:/etc/valkey/valkey.conf
       - node-7000-data:/data
@@ -57,14 +57,10 @@ services:
       - "17005:16379"
 
   cluster-initializer:
-    image: redis/redis-stack-server:latest
+    image: valkey/valkey-bundle:latest
     container_name: cluster-initializer
     volumes:
       - ./config/cluster-init.sh:/usr/local/bin/cluster-init.sh
-    # redis-stack-server image might not have redis-cli in path directly or named differently?
-    # Usually it has redis-cli.
-    # We need to make sure cluster-init.sh uses redis-cli, not valkey-cli if we switch image.
-    # But wait, the script likely uses valkey-cli. I need to check the script.
     command: /bin/sh -c "sleep 5; /usr/local/bin/cluster-init.sh" 
     depends_on:
       - node-7000

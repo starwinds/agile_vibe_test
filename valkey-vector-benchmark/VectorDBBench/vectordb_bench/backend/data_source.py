@@ -108,7 +108,14 @@ class AwsS3Reader(DatasetReader):
     def __init__(self):
         import s3fs
 
-        self.fs = s3fs.S3FileSystem(anon=True, client_kwargs={"region_name": "us-west-2"})
+        self.fs = s3fs.S3FileSystem(
+            anon=True, 
+            client_kwargs={
+                "region_name": "us-west-2",
+                "verify": False  # Disable SSL verification
+            },
+            skip_instance_cache=True
+        )
 
     def ls_all(self, dataset: str):
         dataset_root_dir = pathlib.Path(self.remote_root, dataset)

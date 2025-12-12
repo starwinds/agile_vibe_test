@@ -1,0 +1,22 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy project files
+COPY . /app
+
+# Set environment variables before installation
+ENV PYTHONUNBUFFERED=1
+ENV SETUPTOOLS_SCM_PRETEND_VERSION_FOR_VECTORDB_BENCH=1.0.0
+
+# Install dependencies with trusted hosts to bypass SSL issues
+RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org --no-cache-dir -e .
+RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org valkey
+
+ENTRYPOINT ["/bin/bash", "-c"]

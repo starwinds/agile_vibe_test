@@ -3,7 +3,7 @@ echo ">>> Waiting for nodes to be up..."
 sleep 10
 
 echo ">>> Initiating Valkey Cluster..."
-redis-cli --cluster create \
+valkey-cli --cluster create \
   node-7000:6379 \
   node-7001:6379 \
   node-7002:6379 \

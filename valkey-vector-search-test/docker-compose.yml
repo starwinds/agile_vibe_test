@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  valkey-search:
+    image: valkey/valkey-bundle:latest
+    container_name: valkey-search-test
+    ports:
+      - "6379:6379"
+    command: >
+      valkey-server
+      --loadmodule /opt/valkey-search/lib/libvalkey-search.so
+      --protected-mode no
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - valkey-network
+
+networks:
+  valkey-network:
+    driver: bridge

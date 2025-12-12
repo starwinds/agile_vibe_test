@@ -1,0 +1,52 @@
+2025-12-10 18:16:20,696 | [92mINFO[0m: [92mTask:
+TaskConfig(db=<DB.Valkey: 'Valkey'>, db_config=ValkeyDBConfig(db_label='valkey-cluster', version='', note='', host='127.0.0.1', port=6379, password=None, deployment_type=<DeploymentType.CLUSTER: 'CLUSTER'>, nodes=['127.0.0.1:7000'], service_name=None), db_case_config=ValkeyDBCaseConfig(index_name='vdbbench_idx', prefix='doc:', M=16, EF_CONSTRUCTION=200, EF_RUNTIME=10, distance_metric=<MetricType.COSINE: 'COSINE'>, metric_type=None), case_config=CaseConfig(case_id=<CaseType.Performance1536D50K: 50>, custom_case={}, k=100, concurrency_search_config=ConcurrencySearchConfig(num_concurrency=[1, 5, 10, 20, 30, 40, 60, 80], concurrency_duration=30, concurrency_timeout=3600)), stages=['drop_old', 'load', 'search_serial', 'search_concurrent'])
+[0m (cli.py:649) (736239)
+2025-12-10 18:16:20,697 | [92mINFO[0m: [92mgenerated uuid for the tasks: 2e32c8b989974e07ae9700761696091d[0m (interface.py:76) (736239)
+2025-12-10 18:16:20,698 | INFO | DB             | CaseType     Dataset               Filter | task_label (task_runner.py:400)
+2025-12-10 18:16:20,698 | INFO | -----------    | ------------ -------------------- ------- | -------    (task_runner.py:400)
+2025-12-10 18:16:20,698 | INFO | Valkey-valkey-cluster | Performance  OpenAI-SMALL-50K         0.0 | 2e32c8b989974e07ae9700761696091d (task_runner.py:400)
+2025-12-10 18:16:20,698 | [92mINFO[0m: [92mtask submitted: id=2e32c8b989974e07ae9700761696091d, 2e32c8b989974e07ae9700761696091d, case number: 1[0m (interface.py:251) (736239)
+2025-12-10 18:16:21,373 | [92mINFO[0m: [92m[1/1] start case: {'label': <CaseLabel.Performance: 2>, 'name': 'Search Performance Test (50K Dataset, 1536 Dim)', 'dataset': {'data': {'name': 'OpenAI', 'size': 50000, 'dim': 1536, 'metric_type': <MetricType.COSINE: 'COSINE'>}}, 'db': 'Valkey-valkey-cluster'}, drop_old=True[0m (interface.py:181) (736291)
+2025-12-10 18:16:21,373 | [92mINFO[0m: [92mStarting run[0m (task_runner.py:138) (736291)
+2025-12-10 18:16:21,373 | [92mINFO[0m: [92mValkeyClient initializing with config: {'host': '127.0.0.1', 'port': 6379, 'password': None, 'deployment_type': 'CLUSTER', 'nodes': ['127.0.0.1:7000'], 'service_name': None}[0m (new_client.py:36) (736291)
+2025-12-10 18:16:21,373 | [92mINFO[0m: [92mGetting client...[0m (new_client.py:46) (736291)
+2025-12-10 18:16:21,391 | [93mWARNING[0m: [93m[1/1] case {'label': <CaseLabel.Performance: 2>, 'name': 'Search Performance Test (50K Dataset, 1536 Dim)', 'dataset': {'data': {'name': 'OpenAI', 'size': 50000, 'dim': 1536, 'metric_type': <MetricType.COSINE: 'COSINE'>}}, 'db': 'Valkey-valkey-cluster'} failed to run, reason=No primary nodes found in the cluster[0m (interface.py:203) (736291)
+Traceback (most recent call last):
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/.venv/lib/python3.12/site-packages/valkey/cluster.py", line 1652, in initialize
+    self.default_node = self.get_nodes_by_server_type(PRIMARY)[0]
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+IndexError: list index out of range
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/interface.py", line 182, in _async_task_v2
+    case_res.metrics = runner.run(drop_old)
+                       ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 140, in run
+    self._pre_run(drop_old)
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 131, in _pre_run
+    self.init_db(drop_old)
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 120, in init_db
+    self.db = db_cls(
+              ^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/clients/valkey/new_client.py", line 47, in __init__
+    self.client = self._get_client()
+                  ^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/clients/valkey/new_client.py", line 84, in _get_client
+    return ValkeyCluster(
+           ^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/.venv/lib/python3.12/site-packages/valkey/cluster.py", line 636, in __init__
+    self.nodes_manager = NodesManager(
+                         ^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/.venv/lib/python3.12/site-packages/valkey/cluster.py", line 1366, in __init__
+    self.initialize()
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/.venv/lib/python3.12/site-packages/valkey/cluster.py", line 1654, in initialize
+    raise ValkeyClusterException("No primary nodes found in the cluster")
+valkey.exceptions.ValkeyClusterException: No primary nodes found in the cluster
+2025-12-10 18:16:21,396 | INFO |Task summary: run_id=2e32c, task_label=2e32c8b989974e07ae9700761696091d (models.py:446)
+2025-12-10 18:16:21,396 | INFO |DB     | db_label          case                                            label                            | load_dur    qps        latency(p99)    latency(p95)    recall        max_load_count | label (models.py:446)
+2025-12-10 18:16:21,396 | INFO |------ | ----------------- ----------------------------------------------- -------------------------------- | ----------- ---------- --------------- --------------- ------------- -------------- | ----- (models.py:446)
+2025-12-10 18:16:21,396 | INFO |Valkey | valkey-cluster    Search Performance Test (50K Dataset, 1536 Dim) 2e32c8b989974e07ae9700761696091d | 0.0         0.0        0.0             0.0             0.0           0              | x     (models.py:446)
+2025-12-10 18:16:21,397 | [92mINFO[0m: [92mwrite results to disk /home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/results/Valkey/result_20251210_2e32c8b989974e07ae9700761696091d_valkey.json[0m (models.py:283) (736291)
+2025-12-10 18:16:21,397 | [92mINFO[0m: [92mSuccess to finish task: label=2e32c8b989974e07ae9700761696091d, run_id=2e32c8b989974e07ae9700761696091d[0m (interface.py:222) (736291)

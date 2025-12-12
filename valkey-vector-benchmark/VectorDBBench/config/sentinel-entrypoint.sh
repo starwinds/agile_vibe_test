@@ -17,7 +17,9 @@ sentinel monitor myvalkey $MASTER_IP 6379 2
 sentinel down-after-milliseconds myvalkey 2000
 sentinel failover-timeout myvalkey 10000
 sentinel parallel-syncs myvalkey 1
+protected-mode no
+bind 0.0.0.0
 EOF
 
 # Start the sentinel with the dynamic config
-exec redis-sentinel /tmp/sentinel.conf
+exec valkey-sentinel /tmp/sentinel.conf

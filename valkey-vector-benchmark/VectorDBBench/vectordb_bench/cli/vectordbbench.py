@@ -31,6 +31,7 @@ from ..backend.clients.tidb.cli import TiDB
 from ..backend.clients.vespa.cli import Vespa
 from ..backend.clients.weaviate_cloud.cli import Weaviate
 from ..backend.clients.zilliz_cloud.cli import ZillizAutoIndex
+from ..backend.clients.valkey.cli import Valkey
 from .batch_cli import BatchCli
 from .cli import cli
 
@@ -68,6 +69,7 @@ cli.add_command(S3Vectors)
 cli.add_command(TencentElasticsearch)
 cli.add_command(AliSQLHNSW)
 cli.add_command(Doris)
+cli.add_command(Valkey)
 
 
 if __name__ == "__main__":

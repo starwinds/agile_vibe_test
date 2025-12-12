@@ -1,0 +1,70 @@
+2025-12-10 18:44:40,777 | [92mINFO[0m: [92mTask:
+TaskConfig(db=<DB.Valkey: 'Valkey'>, db_config=ValkeyDBConfig(db_label='valkey-standalone', version='', note='', host='127.0.0.1', port=6379, password=None, deployment_type=<DeploymentType.STANDALONE: 'STANDALONE'>, nodes=None, service_name=None), db_case_config=ValkeyDBCaseConfig(index_name='vdbbench_idx', prefix='doc:', M=16, EF_CONSTRUCTION=200, EF_RUNTIME=10, distance_metric=<MetricType.COSINE: 'COSINE'>, metric_type=None), case_config=CaseConfig(case_id=<CaseType.Performance1536D50K: 50>, custom_case={}, k=100, concurrency_search_config=ConcurrencySearchConfig(num_concurrency=[1, 5, 10, 20, 30, 40, 60, 80], concurrency_duration=30, concurrency_timeout=3600)), stages=['drop_old', 'load', 'search_serial', 'search_concurrent'])
+[0m (cli.py:649) (744869)
+2025-12-10 18:44:40,777 | [92mINFO[0m: [92mgenerated uuid for the tasks: 9211facced6b4f59a388eea2b6694bf4[0m (interface.py:76) (744869)
+2025-12-10 18:44:40,777 | INFO | DB             | CaseType     Dataset               Filter | task_label (task_runner.py:400)
+2025-12-10 18:44:40,778 | INFO | -----------    | ------------ -------------------- ------- | -------    (task_runner.py:400)
+2025-12-10 18:44:40,778 | INFO | Valkey-valkey-standalone | Performance  OpenAI-SMALL-50K         0.0 | 9211facced6b4f59a388eea2b6694bf4 (task_runner.py:400)
+2025-12-10 18:44:40,778 | [92mINFO[0m: [92mtask submitted: id=9211facced6b4f59a388eea2b6694bf4, 9211facced6b4f59a388eea2b6694bf4, case number: 1[0m (interface.py:251) (744869)
+2025-12-10 18:44:41,403 | [92mINFO[0m: [92m[1/1] start case: {'label': <CaseLabel.Performance: 2>, 'name': 'Search Performance Test (50K Dataset, 1536 Dim)', 'dataset': {'data': {'name': 'OpenAI', 'size': 50000, 'dim': 1536, 'metric_type': <MetricType.COSINE: 'COSINE'>}}, 'db': 'Valkey-valkey-standalone'}, drop_old=True[0m (interface.py:181) (744901)
+2025-12-10 18:44:41,403 | [92mINFO[0m: [92mStarting run[0m (task_runner.py:138) (744901)
+2025-12-10 18:44:41,403 | [92mINFO[0m: [92mValkeyClient initializing with config: {'host': '127.0.0.1', 'port': 6379, 'password': None, 'deployment_type': 'STANDALONE', 'nodes': None, 'service_name': None}[0m (new_client.py:36) (744901)
+2025-12-10 18:44:41,403 | [92mINFO[0m: [92mGetting client...[0m (new_client.py:46) (744901)
+2025-12-10 18:44:41,403 | [92mINFO[0m: [92mClient obtained.[0m (new_client.py:48) (744901)
+2025-12-10 18:44:41,403 | [92mINFO[0m: [92mDropping old index...[0m (new_client.py:51) (744901)
+2025-12-10 18:44:41,403 | [92mINFO[0m: [92mCleaning up index vdbbench_idx...[0m (new_client.py:233) (744901)
+2025-12-10 18:44:41,405 | [93mWARNING[0m: [93mFailed to cleanup index vdbbench_idx: Error 111 connecting to 127.0.0.1:6379. Connection refused.[0m (new_client.py:238) (744901)
+2025-12-10 18:44:41,405 | [92mINFO[0m: [92mInitializing index...[0m (new_client.py:53) (744901)
+2025-12-10 18:44:41,405 | [92mINFO[0m: [92mChecking if index vdbbench_idx exists...[0m (new_client.py:117) (744901)
+2025-12-10 18:44:41,405 | [92mINFO[0m: [92mIndex check failed (expected if not exists): Error 111 connecting to 127.0.0.1:6379. Connection refused.[0m (new_client.py:123) (744901)
+2025-12-10 18:44:41,405 | [93mWARNING[0m: [93m[1/1] case {'label': <CaseLabel.Performance: 2>, 'name': 'Search Performance Test (50K Dataset, 1536 Dim)', 'dataset': {'data': {'name': 'OpenAI', 'size': 50000, 'dim': 1536, 'metric_type': <MetricType.COSINE: 'COSINE'>}}, 'db': 'Valkey-valkey-standalone'} failed to run, reason=Error 111 connecting to 127.0.0.1:6379. Connection refused.[0m (interface.py:203) (744901)
+Traceback (most recent call last):
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/.venv/lib/python3.12/site-packages/valkey/connection.py", line 319, in connect
+    sock = self.retry.call_with_retry(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/.venv/lib/python3.12/site-packages/valkey/retry.py", line 62, in call_with_retry
+    return do()
+           ^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/.venv/lib/python3.12/site-packages/valkey/connection.py", line 320, in <lambda>
+    lambda: self._connect(), lambda error: self.disconnect(error)
+            ^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/.venv/lib/python3.12/site-packages/valkey/connection.py", line 747, in _connect
+    raise err
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/.venv/lib/python3.12/site-packages/valkey/connection.py", line 735, in _connect
+    sock.connect(socket_address)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/interface.py", line 182, in _async_task_v2
+    case_res.metrics = runner.run(drop_old)
+                       ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 140, in run
+    self._pre_run(drop_old)
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 131, in _pre_run
+    self.init_db(drop_old)
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 120, in init_db
+    self.db = db_cls(
+              ^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/clients/valkey/new_client.py", line 54, in __init__
+    self._init_index()
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/clients/valkey/new_client.py", line 144, in _init_index
+    self.client.ft(self.index_name).create_index(
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/.venv/lib/python3.12/site-packages/valkey/commands/search/commands.py", line 221, in create_index
+    return self.execute_command(*args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/.venv/lib/python3.12/site-packages/valkey/client.py", line 564, in execute_command
+    conn = self.connection or pool.get_connection(command_name, **options)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/.venv/lib/python3.12/site-packages/valkey/connection.py", line 1125, in get_connection
+    connection.connect()
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/.venv/lib/python3.12/site-packages/valkey/connection.py", line 325, in connect
+    raise ConnectionError(self._error_message(e))
+valkey.exceptions.ConnectionError: Error 111 connecting to 127.0.0.1:6379. Connection refused.
+2025-12-10 18:44:41,408 | INFO |Task summary: run_id=9211f, task_label=9211facced6b4f59a388eea2b6694bf4 (models.py:446)
+2025-12-10 18:44:41,408 | INFO |DB     | db_label             case                                            label                            | load_dur    qps        latency(p99)    latency(p95)    recall        max_load_count | label (models.py:446)
+2025-12-10 18:44:41,408 | INFO |------ | -------------------- ----------------------------------------------- -------------------------------- | ----------- ---------- --------------- --------------- ------------- -------------- | ----- (models.py:446)
+2025-12-10 18:44:41,408 | INFO |Valkey | valkey-standalone    Search Performance Test (50K Dataset, 1536 Dim) 9211facced6b4f59a388eea2b6694bf4 | 0.0         0.0        0.0             0.0             0.0           0              | x     (models.py:446)
+2025-12-10 18:44:41,409 | [92mINFO[0m: [92mwrite results to disk /home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/results/Valkey/result_20251210_9211facced6b4f59a388eea2b6694bf4_valkey.json[0m (models.py:283) (744901)
+2025-12-10 18:44:41,409 | [92mINFO[0m: [92mSuccess to finish task: label=9211facced6b4f59a388eea2b6694bf4, run_id=9211facced6b4f59a388eea2b6694bf4[0m (interface.py:222) (744901)

@@ -3,7 +3,8 @@ import time
 from typing import Any, Iterable, List
 from contextlib import contextmanager
 import valkey
-from valkey.cluster import ValkeyCluster
+import valkey
+from valkey.cluster import ValkeyCluster, ClusterNode
 from valkey.sentinel import Sentinel
 from valkey.commands.search.field import TagField, NumericField, VectorField
 from valkey.commands.search.indexDefinition import IndexDefinition, IndexType
@@ -17,6 +18,9 @@ from .config import ValkeyDBConfig, ValkeyDBCaseConfig, DeploymentType
 log = logging.getLogger(__name__)
 
 class ValkeyClient(VectorDB):
+    # VectorDB 기본 클래스의 name 속성 설정
+    name = "Valkey"
+    
     def __init__(
         self,
         dim: int,
@@ -28,48 +32,77 @@ class ValkeyClient(VectorDB):
         self.dim = dim
         self.db_config = db_config
         self.case_config = db_case_config
-        self.index_name = db_case_config.index_name
-        self.prefix = db_case_config.prefix
+        
+        log.info(f"ValkeyClient initializing with config: {db_config}")
+
+        if isinstance(db_case_config, dict):
+            self.index_name = db_case_config.get("index_name")
+            self.prefix = db_case_config.get("prefix")
+        else:
+            self.index_name = db_case_config.index_name
+            self.prefix = db_case_config.prefix
         
         # Initialize connection for setup
+        log.info("Getting client...")
         self.client = self._get_client()
+        log.info("Client obtained.")
 
         if drop_old:
+            log.info("Dropping old index...")
             self.cleanup()
+            log.info("Initializing index...")
             self._init_index()
+            log.info("Index initialized.")
             
         self.client.close()
         self.client = None
+        log.info("ValkeyClient init done.")
 
     def _get_client(self):
-        if self.db_config.deployment_type == DeploymentType.CLUSTER:
+        # Handle db_config being a dict or object
+        if isinstance(self.db_config, dict):
+            deployment_type = self.db_config.get("deployment_type")
+            nodes = self.db_config.get("nodes")
+            password = self.db_config.get("password")
+            host = self.db_config.get("host")
+            port = self.db_config.get("port")
+            service_name = self.db_config.get("service_name")
+        else:
+            deployment_type = self.db_config.deployment_type
+            nodes = self.db_config.nodes
+            password = self.db_config.password.get_secret_value() if self.db_config.password else None
+            host = self.db_config.host
+            port = self.db_config.port
+            service_name = self.db_config.service_name
+
+        if deployment_type == DeploymentType.CLUSTER or deployment_type == "CLUSTER":
             startup_nodes = []
-            for node in self.db_config.nodes:
-                host, port = node.split(":")
-                startup_nodes.append({"host": host, "port": int(port)})
+            for node in nodes:
+                h, p = node.split(":")
+                startup_nodes.append(ClusterNode(h, int(p)))
             
             return ValkeyCluster(
                 startup_nodes=startup_nodes,
                 decode_responses=True,
-                password=self.db_config.password.get_secret_value() if self.db_config.password else None
+                password=password
             )
-        elif self.db_config.deployment_type == DeploymentType.SENTINEL:
+        elif deployment_type == DeploymentType.SENTINEL or deployment_type == "SENTINEL":
             sentinels = []
-            for node in self.db_config.nodes:
-                host, port = node.split(":")
-                sentinels.append((host, int(port)))
+            for node in nodes:
+                h, p = node.split(":")
+                sentinels.append((h, int(p)))
             
             sentinel = Sentinel(
                 sentinels,
                 decode_responses=True,
-                password=self.db_config.password.get_secret_value() if self.db_config.password else None
+                password=password
             )
-            return sentinel.master_for(self.db_config.service_name, decode_responses=True)
+            return sentinel.master_for(service_name, decode_responses=True)
         else:
             return valkey.Valkey(
-                host=self.db_config.host,
-                port=self.db_config.port,
-                password=self.db_config.password.get_secret_value() if self.db_config.password else None,
+                host=host,
+                port=port,
+                password=password,
                 decode_responses=True
             )
 
@@ -81,11 +114,13 @@ class ValkeyClient(VectorDB):
         self.client = None
 
     def _init_index(self):
+        log.info(f"Checking if index {self.index_name} exists...")
         try:
             self.client.ft(self.index_name).info()
             log.info(f"Index {self.index_name} already exists.")
             return
-        except Exception:
+        except Exception as e:
+            log.info(f"Index check failed (expected if not exists): {e}")
             pass
 
         schema = (
@@ -97,9 +132,9 @@ class ValkeyClient(VectorDB):
                 {
                     "TYPE": "FLOAT32",
                     "DIM": self.dim,
-                    "DISTANCE_METRIC": self.case_config.distance_metric.value,
-                    "M": self.case_config.M,
-                    "EF_CONSTRUCTION": self.case_config.EF_CONSTRUCTION,
+                    "DISTANCE_METRIC": self.case_config.get("distance_metric") if isinstance(self.case_config, dict) else self.case_config.distance_metric.value,
+                    "M": self.case_config.get("M") if isinstance(self.case_config, dict) else self.case_config.M,
+                    "EF_CONSTRUCTION": self.case_config.get("EF_CONSTRUCTION") if isinstance(self.case_config, dict) else self.case_config.EF_CONSTRUCTION,
                 }
             )
         )
@@ -126,6 +161,7 @@ class ValkeyClient(VectorDB):
         pipe = self.client.pipeline(transaction=False)
         count = 0
         try:
+            log.info(f"Inserting {len(embeddings)} embeddings...")
             for i, vector in enumerate(embeddings):
                 id_val = metadata[i]
                 key = f"{self.prefix}{id_val}"
@@ -146,9 +182,11 @@ class ValkeyClient(VectorDB):
             
             if count % 1000 != 0:
                 pipe.execute()
-                
+            
+            log.info(f"Successfully inserted {count} embeddings.")
             return count, None
         except Exception as e:
+            log.error(f"Failed to insert embeddings: {e}")
             return count, e
 
 
@@ -192,8 +230,9 @@ class ValkeyClient(VectorDB):
         return ids
 
     def cleanup(self):
+        log.info(f"Cleaning up index {self.index_name}...")
         try:
-            self.client.ft(self.index_name).dropindex(delete_documents=True)
+            self.client.ft(self.index_name).dropindex()
             log.info(f"Index {self.index_name} and documents deleted.")
         except Exception as e:
             log.warning(f"Failed to cleanup index {self.index_name}: {e}")

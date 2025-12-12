@@ -1,0 +1,23 @@
+# Valkey Standalone with Vector Search Support
+# This Dockerfile sets up Valkey with Vector Search module for benchmarking
+
+FROM valkey/valkey-bundle:latest
+
+# Valkey bundle already includes:
+# - Valkey server
+# - Search module (with vector search support)
+# - JSON module
+# - Bloom filter module
+# - LDAP module
+
+# Expose Valkey port
+EXPOSE 6379
+
+# Use default Valkey configuration
+# The bundle image already has search module pre-loaded
+# No additional configuration needed for basic vector search
+
+# Start Valkey server
+# The bundle entrypoint already handles module loading
+CMD ["valkey-server", "--appendonly", "yes"]
+

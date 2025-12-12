@@ -41,8 +41,8 @@ pip install valkey  # valkey-py 클라이언트 설치
 
 1.  **Valkey 실행**:
     ```bash
-    # 로컬에 Valkey(Redis Stack) 실행
-    docker run -d --name valkey-vector-bench -p 6379:6379 redis/redis-stack-server:latest
+    # 로컬에 Valkey(Vector Search 포함) 실행
+    docker run -d --name valkey-vector-bench -p 6379:6379 valkey/valkey-bundle:latest
     ```
 
 2.  **Config 설정 (`valkey_bench_config.yaml`)**:

@@ -33,6 +33,7 @@ class ValkeyDBCaseConfig(BaseModel, DBCaseConfig):
     EF_CONSTRUCTION: int = 200
     EF_RUNTIME: int = 10
     distance_metric: MetricType = MetricType.COSINE
+    metric_type: MetricType | None = None
 
     def index_param(self) -> dict:
         return {

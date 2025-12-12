@@ -1,24 +1,24 @@
 services:
   valkey-master:
-    image: redis/redis-stack-server:latest
+    image: valkey/valkey-bundle:latest
     container_name: valkey-master
     ports:
       - "6379:6379"
-    command: redis-server --loadmodule /opt/redis-stack/lib/redisearch.so --loadmodule /opt/redis-stack/lib/rejson.so
+    command: valkey-server
     networks:
       - valkey-ha-net
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 1s
       timeout: 3s
       retries: 30
 
   valkey-replica1:
-    image: redis/redis-stack-server:latest
+    image: valkey/valkey-bundle:latest
     container_name: valkey-replica1
     ports:
       - "6380:6379"
-    command: redis-server --loadmodule /opt/redis-stack/lib/redisearch.so --loadmodule /opt/redis-stack/lib/rejson.so --replicaof valkey-master 6379
+    command: valkey-server --replicaof valkey-master 6379
     depends_on:
       valkey-master:
         condition: service_healthy
@@ -26,11 +26,11 @@ services:
       - valkey-ha-net
 
   valkey-replica2:
-    image: redis/redis-stack-server:latest
+    image: valkey/valkey-bundle:latest
     container_name: valkey-replica2
     ports:
       - "6381:6379"
-    command: redis-server --loadmodule /opt/redis-stack/lib/redisearch.so --loadmodule /opt/redis-stack/lib/rejson.so --replicaof valkey-master 6379
+    command: valkey-server --replicaof valkey-master 6379
     depends_on:
       valkey-master:
         condition: service_healthy
@@ -38,7 +38,7 @@ services:
       - valkey-ha-net
 
   valkey-sentinel1:
-    image: redis/redis-stack-server:latest
+    image: valkey/valkey-bundle:latest
     container_name: valkey-sentinel1
     ports:
       - "26379:26379"
@@ -50,7 +50,7 @@ services:
       - valkey-ha-net
 
   valkey-sentinel2:
-    image: redis/redis-stack-server:latest
+    image: valkey/valkey-bundle:latest
     container_name: valkey-sentinel2
     ports:
       - "26380:26379"
@@ -62,7 +62,7 @@ services:
       - valkey-ha-net
 
   valkey-sentinel3:
-    image: redis/redis-stack-server:latest
+    image: valkey/valkey-bundle:latest
     container_name: valkey-sentinel3
     ports:
       - "26381:26379"
