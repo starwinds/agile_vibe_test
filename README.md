@@ -11,7 +11,8 @@
 -   `redis-valkey-compat/`: **Redis와 Valkey 간의 호환성**을 테스트하는 프로젝트입니다.
     -   `docs/comprehensive_test_report.md`: Redis 7.2.6과 Valkey 9.0.0 간의 상세 성능 및 호환성 테스트 결과를 포함합니다.
 -   `valkey-ha-and-cluster/`: **Valkey의 고가용성(HA) 및 클러스터 모드**를 테스트하고 구현하는 프로젝트입니다.
--   `valkey-vector-benchmark/`: **VectorDBBench**를 확장하여 Valkey Vector Search 성능을 벤치마킹하는 프로젝트입니다. ([가이드 보기](valkey-vector-benchmark/docs/manual_benchmark_guide.md))
+-   `valkey-vector-benchmark/`: **VectorDBBench**를 확장하여 Valkey Vector Search 성능을 벤치마킹하는 프로젝트입니다. Standalone, HA, Cluster 모드를 모두 지원합니다. ([가이드 보기](valkey-vector-benchmark/docs/manual_benchmark_guide.md))
+-   `valkey-vector-search-test/`: Valkey의 벡터 검색 기능을 검증하는 간단한 테스트 프로젝트입니다.
 
 각 프로젝트는 유사한 아키텍처를 공유하며 다음으로 구성됩니다:
 
@@ -27,7 +28,8 @@
 -   **벡터 유사도 검색:** 벡터 임베딩을 활용하여 주어진 질문에 가장 관련성이 높은 문서를 찾습니다.
 -   **Redis/Valkey 호환성 테스트:** 기본 CRUD, Pub/Sub, Lua 스크립트, 대용량 페이로드 처리 등 다양한 시나리오에서 호환성을 검증합니다.
 -   **Valkey HA/클러스터:** Sentinel을 이용한 고가용성 구성과 클러스터 모드 구성을 테스트합니다.
--   **Valkey Vector Search 벤치마크:** VectorDBBench를 확장하여 Valkey의 HNSW/FLAT 인덱스 성능을 측정합니다.
+-   **Valkey Vector Search 벤치마크:** VectorDBBench를 확장하여 Valkey의 HNSW/FLAT 인덱스 성능을 Standalone, HA, Cluster 모드에서 측정합니다.
+-   **Valkey Vector Search 기능 테스트:** 간단한 스크립트를 통해 Valkey의 벡터 검색 기능의 기본적인 동작을 검증합니다.
 
 ## 기술 스택
 
