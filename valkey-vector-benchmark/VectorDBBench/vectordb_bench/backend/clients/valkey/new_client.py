@@ -158,10 +158,9 @@ class ValkeyClient(VectorDB):
         labels_data: list[str] | None = None,
         **kwargs,
     ) -> tuple[int, Exception]:
-        pipe = self.client.pipeline(transaction=False)
         count = 0
         try:
-            log.info(f"Inserting {len(embeddings)} embeddings...")
+            log.info(f"Inserting {len(embeddings)} embeddings sequentially...")
             for i, vector in enumerate(embeddings):
                 id_val = metadata[i]
                 key = f"{self.prefix}{id_val}"
@@ -169,19 +168,15 @@ class ValkeyClient(VectorDB):
                 import struct
                 vector_bytes = struct.pack(f'{len(vector)}f', *vector)
                 
-                pipe.hset(key, mapping={
+                self.client.hset(key, mapping={
                     "id": str(id_val),
-                    "metadata": id_val, # Assuming metadata is int and used for filtering
+                    "metadata": id_val,
                     "vector": vector_bytes
                 })
                 
                 count += 1
-                if count % 1000 == 0:
-                    pipe.execute()
-                    pipe = self.client.pipeline(transaction=False)
-            
-            if count % 1000 != 0:
-                pipe.execute()
+                if count % 100 == 0:
+                    log.info(f"Inserted {count} embeddings...")
             
             log.info(f"Successfully inserted {count} embeddings.")
             return count, None
@@ -216,7 +211,6 @@ class ValkeyClient(VectorDB):
                 q_str = f"@metadata:[{metadata_value} +inf]=>[KNN {k} @vector $vec_param AS vector_score]"
 
         q = Query(q_str)\
-            .sort_by("vector_score")\
             .return_fields("id")\
             .dialect(2)
         
@@ -232,7 +226,8 @@ class ValkeyClient(VectorDB):
     def cleanup(self):
         log.info(f"Cleaning up index {self.index_name}...")
         try:
-            self.client.ft(self.index_name).dropindex()
+            # self.client.ft(self.index_name).dropindex()
+            self.client.execute_command("FT.DROPINDEX", self.index_name)
             log.info(f"Index {self.index_name} and documents deleted.")
         except Exception as e:
             log.warning(f"Failed to cleanup index {self.index_name}: {e}")

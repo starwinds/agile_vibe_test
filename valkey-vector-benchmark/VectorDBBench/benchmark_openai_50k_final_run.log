@@ -1,0 +1,87 @@
+2025-12-15 13:22:48,352 | [92mINFO[0m: [92mTask:
+TaskConfig(db=<DB.Valkey: 'Valkey'>, db_config=ValkeyDBConfig(db_label='valkey-standalone', version='', note='', host='127.0.0.1', port=6379, password=None, deployment_type=<DeploymentType.STANDALONE: 'STANDALONE'>, nodes=None, service_name=None), db_case_config=ValkeyDBCaseConfig(index_name='vdbbench_idx', prefix='doc:', M=16, EF_CONSTRUCTION=200, EF_RUNTIME=10, distance_metric=<MetricType.COSINE: 'COSINE'>, metric_type=None), case_config=CaseConfig(case_id=<CaseType.Performance1536D50K: 50>, custom_case={}, k=100, concurrency_search_config=ConcurrencySearchConfig(num_concurrency=[1, 5, 10, 20, 30, 40, 60, 80], concurrency_duration=30, concurrency_timeout=3600)), stages=['drop_old', 'load', 'search_serial', 'search_concurrent'])
+[0m (cli.py:649) (52317)
+2025-12-15 13:22:48,353 | [92mINFO[0m: [92mgenerated uuid for the tasks: 36a66ecafad84154875877f0eef2fa11[0m (interface.py:76) (52317)
+2025-12-15 13:22:48,353 | INFO | DB             | CaseType     Dataset               Filter | task_label (task_runner.py:400)
+2025-12-15 13:22:48,354 | INFO | -----------    | ------------ -------------------- ------- | -------    (task_runner.py:400)
+2025-12-15 13:22:48,354 | INFO | Valkey-valkey-standalone | Performance  OpenAI-SMALL-50K         0.0 | 36a66ecafad84154875877f0eef2fa11 (task_runner.py:400)
+2025-12-15 13:22:48,354 | [92mINFO[0m: [92mtask submitted: id=36a66ecafad84154875877f0eef2fa11, 36a66ecafad84154875877f0eef2fa11, case number: 1[0m (interface.py:251) (52317)
+2025-12-15 13:22:48,904 | [92mINFO[0m: [92m[1/1] start case: {'label': <CaseLabel.Performance: 2>, 'name': 'Search Performance Test (50K Dataset, 1536 Dim)', 'dataset': {'data': {'name': 'OpenAI', 'size': 50000, 'dim': 1536, 'metric_type': <MetricType.COSINE: 'COSINE'>}}, 'db': 'Valkey-valkey-standalone'}, drop_old=True[0m (interface.py:181) (52342)
+2025-12-15 13:22:48,904 | [92mINFO[0m: [92mStarting run[0m (task_runner.py:138) (52342)
+2025-12-15 13:22:48,904 | [92mINFO[0m: [92mValkeyClient initializing with config: {'host': '127.0.0.1', 'port': 6379, 'password': None, 'deployment_type': 'STANDALONE', 'nodes': None, 'service_name': None}[0m (new_client.py:36) (52342)
+2025-12-15 13:22:48,904 | [92mINFO[0m: [92mGetting client...[0m (new_client.py:46) (52342)
+2025-12-15 13:22:48,904 | [92mINFO[0m: [92mClient obtained.[0m (new_client.py:48) (52342)
+2025-12-15 13:22:48,904 | [92mINFO[0m: [92mDropping old index...[0m (new_client.py:51) (52342)
+2025-12-15 13:22:48,904 | [92mINFO[0m: [92mCleaning up index vdbbench_idx...[0m (new_client.py:233) (52342)
+2025-12-15 13:22:48,908 | [92mINFO[0m: [92mIndex vdbbench_idx and documents deleted.[0m (new_client.py:237) (52342)
+2025-12-15 13:22:48,908 | [92mINFO[0m: [92mInitializing index...[0m (new_client.py:53) (52342)
+2025-12-15 13:22:48,908 | [92mINFO[0m: [92mChecking if index vdbbench_idx exists...[0m (new_client.py:117) (52342)
+2025-12-15 13:22:48,908 | [92mINFO[0m: [92mIndex check failed (expected if not exists): Index with name 'vdbbench_idx' not found[0m (new_client.py:123) (52342)
+2025-12-15 13:22:48,911 | [92mINFO[0m: [92mIndex vdbbench_idx created.[0m (new_client.py:148) (52342)
+2025-12-15 13:22:48,912 | [92mINFO[0m: [92mIndex initialized.[0m (new_client.py:55) (52342)
+2025-12-15 13:22:48,912 | [92mINFO[0m: [92mValkeyClient init done.[0m (new_client.py:59) (52342)
+2025-12-15 13:22:50,520 | [92mINFO[0m: [92mRead the entire file into memory: test.parquet[0m (dataset.py:392) (52342)
+2025-12-15 13:22:50,701 | [92mINFO[0m: [92mRead the entire file into memory: neighbors.parquet[0m (dataset.py:392) (52342)
+2025-12-15 13:22:50,765 | [92mINFO[0m: [92mStart performance case[0m (task_runner.py:183) (52342)
+2025-12-15 13:22:51,490 | [92mINFO[0m: [92m(SpawnProcess-1:1) Start inserting embeddings in batch 100[0m (serial_runner.py:56) (52449)
+2025-12-15 13:22:51,490 | [92mINFO[0m: [92mGet iterator for shuffle_train.parquet[0m (dataset.py:413) (52449)
+2025-12-15 13:22:51,503 | [92mINFO[0m: [92mInserting 100 embeddings...[0m (new_client.py:164) (52449)
+2025-12-15 14:22:50,604 | [93mWARNING[0m: [93mVectorDB load dataset timeout in 3600[0m (serial_runner.py:162) (52342)
+2025-12-15 14:22:50,628 | [93mWARNING[0m: [93mFailed to run performance case, reason = PerformanceTimeoutError.__init__() takes 1 positional argument but 2 were given[0m (task_runner.py:217) (52342)
+Traceback (most recent call last):
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 188, in _run_perf_case
+    _, load_dur = self._load_train_data()
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/utils.py", line 43, in inner
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 250, in _load_train_data
+    raise e from None
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 248, in _load_train_data
+    runner.run()
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/runner/serial_runner.py", line 208, in run
+    count, _ = self._insert_all_batches()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/utils.py", line 43, in inner
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/runner/serial_runner.py", line 165, in _insert_all_batches
+    raise PerformanceTimeoutError(msg) from e
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: PerformanceTimeoutError.__init__() takes 1 positional argument but 2 were given
+2025-12-15 14:22:50,638 | [93mWARNING[0m: [93m[1/1] case {'label': <CaseLabel.Performance: 2>, 'name': 'Search Performance Test (50K Dataset, 1536 Dim)', 'dataset': {'data': {'name': 'OpenAI', 'size': 50000, 'dim': 1536, 'metric_type': <MetricType.COSINE: 'COSINE'>}}, 'db': 'Valkey-valkey-standalone'} failed to run, reason=PerformanceTimeoutError.__init__() takes 1 positional argument but 2 were given[0m (interface.py:203) (52342)
+Traceback (most recent call last):
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/interface.py", line 182, in _async_task_v2
+    case_res.metrics = runner.run(drop_old)
+                       ^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 145, in run
+    return self._run_perf_case(drop_old)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 219, in _run_perf_case
+    raise e from None
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 188, in _run_perf_case
+    _, load_dur = self._load_train_data()
+                  ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/utils.py", line 43, in inner
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 250, in _load_train_data
+    raise e from None
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/task_runner.py", line 248, in _load_train_data
+    runner.run()
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/runner/serial_runner.py", line 208, in run
+    count, _ = self._insert_all_batches()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/utils.py", line 43, in inner
+    result = func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/backend/runner/serial_runner.py", line 165, in _insert_all_batches
+    raise PerformanceTimeoutError(msg) from e
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: PerformanceTimeoutError.__init__() takes 1 positional argument but 2 were given
+2025-12-15 14:22:50,643 | INFO |Task summary: run_id=36a66, task_label=36a66ecafad84154875877f0eef2fa11 (models.py:446)
+2025-12-15 14:22:50,643 | INFO |DB     | db_label             case                                            label                            | load_dur    qps        latency(p99)    latency(p95)    recall        max_load_count | label (models.py:446)
+2025-12-15 14:22:50,644 | INFO |------ | -------------------- ----------------------------------------------- -------------------------------- | ----------- ---------- --------------- --------------- ------------- -------------- | ----- (models.py:446)
+2025-12-15 14:22:50,644 | INFO |Valkey | valkey-standalone    Search Performance Test (50K Dataset, 1536 Dim) 36a66ecafad84154875877f0eef2fa11 | 0.0         0.0        0.0             0.0             0.0           0              | x     (models.py:446)
+2025-12-15 14:22:50,645 | [92mINFO[0m: [92mwrite results to disk /home/ubuntu/dev-proj/agile_vibe_test/valkey-vector-benchmark/VectorDBBench/vectordb_bench/results/Valkey/result_20251215_36a66ecafad84154875877f0eef2fa11_valkey.json[0m (models.py:283) (52342)
+2025-12-15 14:22:50,647 | [92mINFO[0m: [92mSuccess to finish task: label=36a66ecafad84154875877f0eef2fa11, run_id=36a66ecafad84154875877f0eef2fa11[0m (interface.py:222) (52342)

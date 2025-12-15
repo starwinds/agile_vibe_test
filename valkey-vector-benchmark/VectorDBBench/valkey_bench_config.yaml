@@ -5,15 +5,29 @@ db_config:
   password: null
 
 cases:
-  - case_id: 1
-    label: valkey-hnsw-m16-ef200
+#   - case_id: 1
+#     label: valkey-hnsw-m16-ef200
+#     dataset:
+#       name: glove-100-angular
+#       size: 10000
+#       dim: 100
+#     db_case_config:
+#       index_name: vdbbench_idx_hnsw
+#       prefix: "doc:"
+#       M: 16
+#       EF_CONSTRUCTION: 200
+#       EF_RUNTIME: 10
+#       distance_metric: COSINE
+
+  - case_id: 50
+    label: valkey-openai-small
     dataset:
-      name: glove-100-angular
-      size: 10000
-      dim: 100
+      name: openai-1536-angular
+      size: 50000
+      dim: 1536
     db_case_config:
-      index_name: vdbbench_idx_hnsw
-      prefix: "doc:"
+      index_name: vdbbench_idx_openai
+      prefix: "doc_openai:"
       M: 16
       EF_CONSTRUCTION: 200
       EF_RUNTIME: 10
