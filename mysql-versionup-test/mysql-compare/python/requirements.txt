@@ -1,0 +1,4 @@
+pytest
+mysql-connector-python
+PyMySQL
+pytest-json-report
