@@ -61,6 +61,16 @@
 - [ ] **(Perf) Test:** PK 및 Secondary Index 기반 Select Latency 측정 (평균, p95)
 - [ ] **(Perf) Test:** 테스트 전 Warm-up 로직 추가
 
+### Story 2.5: 시스템 스키마 변경 사항 검증
+- **As a** DBaaS 엔지니어,
+- **I want to** `information_schema`와 `mysql` 데이터베이스의 테이블 및 컬럼 목록을 비교하는 테스트를 실행하여,
+- **So that** 시스템 스키마의 변경, 추가, 또는 삭제된 항목을 식별하고 업그레이드 시 잠재적인 호환성 문제를 예측할 수 있다.
+
+#### Tasks
+- [ ] **(Sys-Schema) Test:** `information_schema.tables` 목록 비교
+- [ ] **(Sys-Schema) Test:** `information_schema.columns` 목록 비교
+- [ ] **(Sys-Schema) Test:** `mysql` 데이터베이스의 주요 시스템 테이블 목록 비교 (e.g., `user`, `db`)
+
 ---
 
 ## Epic 3: 테스트 결과 리포팅
