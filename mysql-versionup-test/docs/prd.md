@@ -29,6 +29,8 @@
 
 ### 5.2. 비교 테스트 스크립트
 - **FR-4 (스키마/DDL):** Foreign Key 제약 조건, PK 없는 테이블 정책, Collation, 신규 예약어 등 DDL 관련 동작 차이를 검증하는 테스트 케이스를 구현해야 합니다.
+- **FR-4-1 (시스템 스키마):** MySQL **8.0.42**와 **8.4.7** 간의 **system schema 차이점**을 실제 
+실행 환경에서 **정량적·정성적으로 비교**하는 테스트 케이스를 구현해야 합니다.
 - **FR-5 (인증):** `mysql_native_password`와 `caching_sha2_password` 인증 플러그인 기반 계정의 접속 가능 여부를 버전별로 테스트해야 합니다.
 - **FR-6 (기본 파라미터):** `binlog_expire_logs_seconds`, `innodb_flush_neighbors` 등 지정된 주요 시스템 변수 값을 두 버전에서 수집하고 비교할 수 있어야 합니다.
 - **FR-7 (성능):** 간단한 Insert TPS 및 Select Latency를 측정하여 버전 간 상대적 성능 경향을 비교하는 테스트를 포함해야 합니다.
