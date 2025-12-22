@@ -22,7 +22,6 @@ def generate_report():
         if test['outcome'] == 'passed' and 'test_perf_simple' in test['nodeid']:
             version = 'mysql80' if '[mysql80]' in test['nodeid'] else 'mysql84'
             
-            # Extract data from user_properties
             if 'user_properties' in test:
                 for prop_dict in test['user_properties']:
                     if 'tps' in prop_dict:
@@ -45,20 +44,30 @@ def generate_report():
     if not failures:
         report_lines.append("\n모든 테스트를 통과했습니다. 주요 버전 차이점이 발견되지 않았습니다.")
     else:
-        report_lines.append("\n| 테스트 분류 | 내용 |\n|---|---|\n")
+        report_lines.append("\n| 테스트 분류 | 상세 내용 |")
+        report_lines.append("|---|---|")
         for failure in failures:
             test_name = failure['nodeid'].split('::')[-1]
-            category = "알 수 없음"
+            category = "기타"
             if 'authentication' in test_name:
                 category = "인증 (Authentication)"
             elif 'variable' in test_name:
                 category = "시스템 변수 (System Variable)"
+            elif 'system_schema' in failure['nodeid']:
+                category = "시스템 스키마 (System Schema)"
             
             message = failure['call']['crash']['message']
-            report_lines.append(f"| **{category}** | `{test_name}`<br>{message} |")
+            stdout = failure['call'].get('stdout', '')
+            
+            detailed_message = f"`{test_name}`<br>**{message}**"
+            if stdout and "---" in stdout: # Add stdout if it contains our test markers
+                detailed_message += f"\n\n**Test Output:**\n```\n{stdout.strip()}\n```"
+
+            report_lines.append(f"| **{category}** | {detailed_message} |")
 
     report_lines.append("\n## 3. 성능 테스트 결과 (경향성)")
-    report_lines.append("\n| 측정 항목 | MySQL 8.0.42 | MySQL 8.4.7 | 비교 |\n|---|---|---|---|\n")
+    report_lines.append("\n| 측정 항목 | MySQL 8.0.42 | MySQL 8.4.7 | 비교 |")
+    report_lines.append("|---|---|---|---|")
     
     tps80 = perf_results['mysql80'].get('tps', 0)
     tps84 = perf_results['mysql84'].get('tps', 0)
