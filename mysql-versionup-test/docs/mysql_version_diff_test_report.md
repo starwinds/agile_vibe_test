@@ -46,7 +46,25 @@ MySQL 8.4에서는 보안 강화를 위해 일부 레거시 인증 방식이나 
 
 ---
 
-## 3. 성능 테스트 결과 (경향성)
+---
+
+## 3. Story 2.1: Foreign Key(FK) 제약 및 스키마 차이 검증
+
+MySQL 8.0과 8.4 버전에서 FK 생성 시의 제약 사항과 동작 차이를 검증한 결과입니다.
+
+> [!NOTE]
+> **검증 요약:** 두 버전 모두 FK 생성 규칙(PK/Unique 제약 필요, 타입 일치 등)을 엄격하게 준수하고 있으며, 8.4에서는 일부 에러 메시지가 더 구체적으로 변경되었습니다.
+
+| 테스트 항목 | 검증 내용 | 결과 | 상세 (MySQL 8.0 / 8.4) |
+| :--- | :--- | :--- | :--- |
+| **부모 테이블 제약 미비** | 부모 테이블에 PK/Unique 제약이 없는 경우 FK 생성 시도 | **성공 (실패 유도)** | 8.0: Error 1822 / 8.4: **Error 6125** (메시지 구체화) |
+| **컬럼 타입 불일치** | 부모/자식 컬럼의 데이터 타입이 다른 경우 | **성공 (실패 유도)** | 두 버전 모두 Error 3780 발생 (Incompatible types) |
+| **컬럼 길이 불일치** | 부모/자식 컬럼의 길이는 다르지만 호환 가능한 경우 | **성공 (생성 허용)** | 두 버전 모두 FK 생성 성공 (정상 동작) |
+| **Collation 불일치** | 부모/자식 컬럼의 Collation이 다른 경우 | **성공 (실패 유도)** | 두 버전 모두 Error 3780 발생 (Incompatible collation) |
+
+---
+
+## 4. 성능 테스트 결과 (경향성)
 
 MySQL 8.4.7은 8.0.42 대비 전반적으로 소폭 향상된 성능을 보여줍니다.
 
@@ -57,9 +75,9 @@ MySQL 8.4.7은 8.0.42 대비 전반적으로 소폭 향상된 성능을 보여�
 
 ---
 
-## 4. 전체 시스템 변수 비교 (Global Variables)
+## 5. 전체 시스템 변수 비교 (Global Variables)
 
-### 4.1. 변수 통계 요약
+### 5.1. 변수 통계 요약
 
 | 항목 | MySQL 8.0.42 | MySQL 8.4.7 | 차이 |
 | :--- | :--- | :--- | :--- |
@@ -68,7 +86,7 @@ MySQL 8.4.7은 8.0.42 대비 전반적으로 소폭 향상된 성능을 보여�
 | **8.4 전용 변수** | - | 6 | 신규 추가 |
 | **값이 다른 변수** | 28 | 28 | 기본값 변경 등 |
 
-### 4.2. 값이 다른 변수 상세 (총 28개)
+### 5.2. 값이 다른 변수 상세 (총 28개)
 
 > [!TIP]
 > 가독성을 위해 28개의 변수를 **성능/InnoDB**, **시스템 경로/빌드**, **기타 설정**으로 분류하여 정리했습니다.
@@ -119,7 +137,7 @@ MySQL 8.4.7은 8.0.42 대비 전반적으로 소폭 향상된 성능을 보여�
 | `performance_schema_max_statement_classes` | 219 | 220 |
 | `innodb_buffer_pool_in_core_file` | `ON` | `OFF` |
 
-### 4.3. MySQL 8.4.7 신규 추가 변수
+### 5.3. MySQL 8.4.7 신규 추가 변수
 - `explain_json_format_version`
 - `performance_schema_max_meter_classes`
 - `performance_schema_max_metric_classes`
@@ -127,5 +145,38 @@ MySQL 8.4.7은 8.0.42 대비 전반적으로 소폭 향상된 성능을 보여�
 - `set_operations_buffer_size`
 - `tls_certificates_enforced_validation`
 
-### 4.4. MySQL 8.4.7에서 제거된 변수 (8.0에만 존재)
+### 5.4. MySQL 8.4.7에서 제거된 변수 (8.0에만 존재)
 - `avoid_temporal_upgrade`, `binlog_transaction_dependency_tracking`, `default_authentication_plugin`, `expire_logs_days`, `have_openssl`, `have_ssl`, `log_bin_use_v1_row_events`, `master_info_repository`, `new`, `old`, `relay_log_info_file`, `relay_log_info_repository`, `show_old_temporals`, `slave_rows_search_algorithms`, `transaction_write_set_extraction`
+
+---
+
+## 6. 전체 성공 테스트 내역 (Passed Tests - 29건)
+
+성공한 테스트 항목들을 카테고리별로 분류하였습니다.
+
+### 6.1. Schema & FK 호환성 (8건)
+- `test_fk_no_parent_pk[mysql80/84]`
+- `test_fk_column_type_mismatch[mysql80/84]`
+- `test_fk_column_length_mismatch[mysql80/84]`
+- `test_fk_collation_mismatch[mysql80/84]`
+
+### 6.2. 성능 지표 측정 (4건)
+- `test_insert_tps[mysql80/84]`
+- `test_select_latency[mysql80/84]`
+
+### 6.3. 스키마 호환성 상세 (8건)
+- `test_pk_less_table[mysql80/84]`
+- `test_collation_join[mysql80/84]`
+- `test_new_reserved_word[mysql80/84]`
+- `test_removed_reserved_word[mysql80/84]`
+
+### 6.4. 시스템 변수 및 스키마 검증 (9건)
+- `test_variable_comparison[binlog_expire_logs_seconds]`
+- `test_variable_comparison[innodb_flush_neighbors]`
+- `test_variable_comparison[innodb_flush_log_at_trx_commit]`
+- `test_variable_comparison[innodb_log_file_size]`
+- `test_variable_comparison[gtid_mode]`
+- `test_variable_comparison[enforce_gtid_consistency]`
+- `test_variable_comparison[log_bin]`
+- `test_variable_comparison[binlog_row_image]`
+- `test_mysql_db_table_diff`
