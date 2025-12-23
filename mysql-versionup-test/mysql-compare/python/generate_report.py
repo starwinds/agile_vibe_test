@@ -53,6 +53,8 @@ def generate_report():
                 category = "인증 (Authentication)"
             elif 'variable' in test_name:
                 category = "시스템 변수 (System Variable)"
+            elif 'global_variables_comparison' in test_name:
+                category = "전체 시스템 변수 비교 (Global Variables Comparison)"
             elif 'system_schema' in failure['nodeid']:
                 category = "시스템 스키마 (System Schema)"
             
@@ -83,6 +85,47 @@ def generate_report():
         lat_diff = f"{((lat84 - lat80) / lat80) * 100:+.2f}%"
     report_lines.append(f"| Select Latency (ms) (낮을수록 좋음) | {lat80:.4f} | {lat84:.4f} | **{lat_diff}** |")
 
+    # --- Global Variables Comparison ---
+    vars_json_path = os.path.join(os.path.dirname(__file__), 'variable_comparison.json')
+    if os.path.exists(vars_json_path):
+        with open(vars_json_path, 'r') as f:
+            vars_data = json.load(f)
+        
+        summary = vars_data['summary']
+        report_lines.extend([
+            "\n## 4. 전체 시스템 변수 비교 (Global Variables Comparison)",
+            "\n### 4.1. 요약",
+            "\n| 항목 | MySQL 8.0.42 | MySQL 8.4.7 | 차이 |",
+            "|---|---|---|---|",
+            f"| 전체 변수 수 | {summary['total_in_80']} | {summary['total_in_84']} | {summary['total_in_84'] - summary['total_in_80']}:+ |",
+            f"| 8.0에만 존재 | {summary['only_in_80']} | - | - |",
+            f"| 8.4에만 존재 | - | {summary['only_in_84']} | - |",
+            f"| 값이 다른 변수 | {summary['different_values']} | {summary['different_values']} | - |",
+            
+            "\n### 4.2. 값이 다른 변수",
+            "\n| 변수명 | MySQL 8.0.42 | MySQL 8.4.7 |",
+            "|---|---|---|"
+        ])
+        for var, values in vars_data['different_values'].items():
+            report_lines.append(f"| `{var}` | {values['mysql80']} | {values['mysql84']} |")
+
+        report_lines.append("\n### 4.3. MySQL 8.4.7에 추가된 변수")
+        if vars_data['only_in_84']:
+            report_lines.append("\n| 변수명 |")
+            report_lines.append("|---|")
+            for var in vars_data['only_in_84']:
+                report_lines.append(f"| `{var}` |")
+        else:
+            report_lines.append("\n추가된 변수가 없습니다.")
+
+        report_lines.append("\n### 4.4. MySQL 8.0.42에서 제거된 변수")
+        if vars_data['only_in_80']:
+            report_lines.append("\n| 변수명 |")
+            report_lines.append("|---|")
+            for var in vars_data['only_in_80']:
+                report_lines.append(f"| `{var}` |")
+        else:
+            report_lines.append("\n제거된 변수가 없습니다.")
 
     # --- Write File ---
     with open(report_path, 'w') as f:

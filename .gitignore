@@ -20,3 +20,9 @@ __pycache__/
 # Egg info
 *.egg-info/
 **/*.egg-info/
+
+# Generated test result files
+test_results.json
+**/test_results.json
+variable_comparison.json
+**/variable_comparison.json

@@ -15,6 +15,9 @@
 | **Epic 2: 테스트 개발** | **Story 2.5:** 시스템 스키마 변경 사항 검증 | **(Sys-Schema) Test:** `information_schema.tables` 목록 비교 | To-Do |
 | | | **(Sys-Schema) Test:** `information_schema.columns` 목록 비교 | To-Do |
 | | | **(Sys-Schema) Test:** `mysql` 데이터베이스의 주요 시스템 테이블 목록 비교 | To-Do |
+| | **Story 2.6:** 전체 시스템 변수 비교 | **(Global-Vars) Test:** 각 버전에서 `SHOW GLOBAL VARIABLES` 전체 결과 수집 | Done |
+| | | **(Global-Vars) Test:** 두 버전 간에 값이 다른 변수, 한쪽에만 존재하는 변수 목록화 | Done |
+| | | **(Global-Vars) Test:** 비교 결과를 정량적으로 요약하여 리포트에 포함 | Done |
 
 ## 4. Definition of Done (DoD)
 - **[Code]** 작성된 모든 코드는 `flake8` 또는 `black` 스타일 가이드를 준수한다.
