@@ -127,6 +127,23 @@ def generate_report():
         else:
             report_lines.append("\n제거된 변수가 없습니다.")
 
+    # --- Authentication Fix Section ---
+    report_lines.extend([
+        "\n## 5. 인증 방식 변경 및 대응 (Authentication Fix & Impact)",
+        "\nMySQL 8.4에서는 `caching_sha2_password`가 기본 인증 플러그인으로 사용됩니다. 테스트 과정에서 발견된 이슈와 해결 과정을 기록합니다.",
+        "\n### 5.1. 이슈 현황",
+        "- **현상:** `sha2_user` 접속 시 `'cryptography' package is required for sha256_password or caching_sha2_password` 오류 발생하며 접속 실패.",
+        "- **원인:** Python 환경에 `caching_sha2_password` 처리를 위한 `cryptography` 패키지가 누락됨.",
+        "\n### 5.2. 해결 과정 및 결과",
+        "1. **패키지 설치:** Python 환경(`requirements.txt`)에 `cryptography` 패키지 추가 및 설치.",
+        "2. **재시험 결과:** `sha2_user`가 MySQL 8.0 및 8.4 모두에서 **정상 접속 성공** 확인.",
+        "\n### 5.3. 사용자 관점의 영향도 검토",
+        "> [!IMPORTANT]",
+        "> **MySQL 8.4 업그레이드 시 주의 사항**",
+        "> 1. **클라이언트 라이브러리 의존성:** Python 등 클라이언트 환경에서 `caching_sha2_password`를 지원하기 위한 추가 라이브러리(예: `cryptography`)가 필요할 수 있습니다.",
+        "> 2. **Native Password 지원 중단:** MySQL 8.4에서는 `mysql_native_password` 플러그인이 기본적으로 비활성화되어 있습니다. 기존 `native_user` 방식의 계정은 접속이 실패하므로, `caching_sha2_password`로의 전환이 권장됩니다.",
+    ])
+
     # --- Write File ---
     with open(report_path, 'w') as f:
         f.write("\n".join(report_lines))

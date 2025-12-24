@@ -1,0 +1,71 @@
+services:
+  node-7000: &valkey-cluster-node
+    image: valkey/valkey-bundle:latest
+    command: valkey-server /etc/valkey/valkey.conf --port 7000 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    volumes:
+      - ./config/valkey-cluster.conf:/etc/valkey/valkey.conf
+      - node-7000-data:/data
+    network_mode: host
+
+  node-7001:
+    <<: *valkey-cluster-node
+    command: valkey-server /etc/valkey/valkey.conf --port 7001 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    volumes:
+      - ./config/valkey-cluster.conf:/etc/valkey/valkey.conf
+      - node-7001-data:/data
+    network_mode: host
+
+  node-7002:
+    <<: *valkey-cluster-node
+    command: valkey-server /etc/valkey/valkey.conf --port 7002 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    volumes:
+      - ./config/valkey-cluster.conf:/etc/valkey/valkey.conf
+      - node-7002-data:/data
+    network_mode: host
+
+  node-7003:
+    <<: *valkey-cluster-node
+    command: valkey-server /etc/valkey/valkey.conf --port 7003 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    volumes:
+      - ./config/valkey-cluster.conf:/etc/valkey/valkey.conf
+      - node-7003-data:/data
+    network_mode: host
+
+  node-7004:
+    <<: *valkey-cluster-node
+    command: valkey-server /etc/valkey/valkey.conf --port 7004 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    volumes:
+      - ./config/valkey-cluster.conf:/etc/valkey/valkey.conf
+      - node-7004-data:/data
+    network_mode: host
+
+  node-7005:
+    <<: *valkey-cluster-node
+    command: valkey-server /etc/valkey/valkey.conf --port 7005 --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --appendonly yes
+    volumes:
+      - ./config/valkey-cluster.conf:/etc/valkey/valkey.conf
+      - node-7005-data:/data
+    network_mode: host
+
+  cluster-initializer:
+    image: valkey/valkey-bundle:latest
+    container_name: cluster-initializer
+    volumes:
+      - ./config/cluster-init.sh:/usr/local/bin/cluster-init.sh
+    command: /usr/local/bin/cluster-init.sh
+    depends_on:
+      - node-7000
+      - node-7001
+      - node-7002
+      - node-7003
+      - node-7004
+      - node-7005
+    network_mode: host
+
+volumes:
+  node-7000-data:
+  node-7001-data:
+  node-7002-data:
+  node-7003-data:
+  node-7004-data:
+  node-7005-data:

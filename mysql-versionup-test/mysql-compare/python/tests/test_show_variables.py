@@ -48,3 +48,59 @@ def test_variable_comparison(variable_name, db_variables):
     print(f"[mysql84] {variable_name} = {val84}")
 
     assert val80 == val84, f"Variable '{variable_name}' differs: 8.0 is '{val80}', 8.4 is '{val84}'"
+
+def test_global_variables_comparison(db_variables):
+    """
+    Compares all global system variables between MySQL 8.0 and 8.4.
+    Identifies variables with different values, and variables unique to each version.
+    """
+    print("\n--- Comparing ALL global variables ---")
+    vars80 = db_variables['mysql80']
+    vars84 = db_variables['mysql84']
+
+    diff_values = {}
+    unique_to_80 = {}
+    unique_to_84 = {}
+
+    # Compare common variables
+    for var_name, val80 in vars80.items():
+        if var_name in vars84:
+            val84 = vars84[var_name]
+            if val80 != val84:
+                diff_values[var_name] = {'mysql80': val80, 'mysql84': val84}
+        else:
+            unique_to_80[var_name] = val80
+    
+    # Find variables unique to 8.4
+    for var_name, val84 in vars84.items():
+        if var_name not in vars80:
+            unique_to_84[var_name] = val84
+
+    report_output = []
+    if diff_values:
+        report_output.append("\n### Variables with Different Values:")
+        report_output.append("| Variable Name | MySQL 8.0 Value | MySQL 8.4 Value |")
+        report_output.append("|---------------|-----------------|-----------------|")
+        for var_name, values in diff_values.items():
+            report_output.append(f"| `{var_name}` | `{values['mysql80']}` | `{values['mysql84']}` |")
+    
+    if unique_to_80:
+        report_output.append("\n### Variables Unique to MySQL 8.0:")
+        report_output.append("| Variable Name | MySQL 8.0 Value |")
+        report_output.append("|---------------|-----------------|")
+        for var_name, value in unique_to_80.items():
+            report_output.append(f"| `{var_name}` | `{value}` |")
+
+    if unique_to_84:
+        report_output.append("\n### Variables Unique to MySQL 8.4:")
+        report_output.append("| Variable Name | MySQL 8.4 Value |")
+        report_output.append("|---------------|-----------------|")
+        for var_name, value in unique_to_84.items():
+            report_output.append(f"| `{var_name}` | `{value}` |")
+
+    if diff_values or unique_to_80 or unique_to_84:
+        full_report = "\n".join(report_output)
+        print(full_report) # Print to stdout for report generation
+        pytest.fail(f"Differences found in global variables. See stdout for details.")
+    else:
+        print("No differences found in global variables.")

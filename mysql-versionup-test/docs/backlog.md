@@ -71,6 +71,16 @@
 - [ ] **(Sys-Schema) Test:** `information_schema.columns` 목록 비교
 - [ ] **(Sys-Schema) Test:** `mysql` 데이터베이스의 주요 시스템 테이블 목록 비교 (e.g., `user`, `db`)
 
+### Story 2.6: 전체 시스템 변수 비교
+- **As a** DBaaS 엔지니어,
+- **I want to** 두 MySQL 버전의 `SHOW GLOBAL VARIABLES` 결과를 전체 비교하여,
+- **So that** 사전에 정의되지 않은 파라미터의 변경 사항까지 모두 식별하고 잠재적 영향을 분석할 수 있다.
+
+#### Tasks
+- [ ] **(Global-Vars) Test:** 각 버전에서 `SHOW GLOBAL VARIABLES` 전체 결과 수집
+- [ ] **(Global-Vars) Test:** 두 버전 간에 값이 다른 변수, 한쪽에만 존재하는 변수 목록화
+- [ ] **(Global-Vars) Test:** 비교 결과를 정량적으로 요약하여 리포트에 포함
+
 ---
 
 ## Epic 3: 테스트 결과 리포팅

@@ -1,0 +1,25 @@
+FROM python:3.11-slim as builder-image
+
+# Install CA certificates to avoid SSL verification failures
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY install/requirements_minimal.txt .
+
+# Upgrade pip and install with trusted hosts (for environments with intercepting proxies)
+RUN pip3 install -U pip \
+    && pip3 install --no-cache-dir -r requirements_minimal.txt \
+       -i https://pypi.org/simple \
+       --trusted-host pypi.org --trusted-host files.pythonhosted.org
+
+FROM python:3.11-slim
+
+COPY --from=builder-image /usr/local/bin /usr/local/bin
+COPY --from=builder-image /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+
+WORKDIR /opt/code
+COPY . .
+ENV PYTHONPATH /opt/code
+
+ENTRYPOINT ["python3", "-m", "vectordb_bench"]

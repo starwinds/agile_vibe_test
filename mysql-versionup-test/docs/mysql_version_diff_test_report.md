@@ -1,182 +1,232 @@
-# MySQL 8.0.42 vs 8.4.7 비교 테스트 보고서
+# MySQL 8.0.42 vs 8.4.7 비교 테스트 자동화 보고서
+**보고서 생성일:** 2025-12-24 10:17:31
 
-> [!NOTE]
-> **보고서 생성일:** 2025-12-23 10:51:43
-> 본 보고서는 MySQL 8.0(LTS 이전 마지막 마이너)과 8.4(LTS) 버전 간의 기능적 차이와 성능 경향성을 분석한 결과입니다.
+## 1. 테스트 요약
+- **전체 테스트:** 37
+- **성공:** 31
+- **실패:** 6
+- **실행 시간:** 13.41초
 
----
+## 2. 주요 차이점 분석 (실패 항목)
 
-## 1. 테스트 결과 요약
+| 테스트 분류 | 상세 내용 |
+|---|---|
+| **인증 (Authentication)** | `test_authentication_comparison[mysql.connector-native_user]`<br>**Failed: Authentication behavior differs for native_user with mysql.connector: 8.0 is SUCCESS, 8.4 is FAIL**
 
-| 분류 | 결과 | 비고 |
-| :--- | :--- | :--- |
-| **전체 테스트 수** | **36** | |
-| **성공 (Passed)** | <span style="color:green">**29**</span> | |
-| **실패 (Failed)** | <span style="color:red">**7**</span> | 하단 상세 분석 참조 |
-| **실행 시간** | 14.43초 | |
+**Test Output:**
+```
+--- Comparing auth for user 'native_user' with driver 'mysql.connector' ---
+Failed to connect to mysql84 using mysql.connector with user native_user: 1524 (HY000): Plugin 'mysql_native_password' is not loaded
+Result for MySQL 8.0: SUCCESS
+Result for MySQL 8.4: FAIL
+``` |
+| **인증 (Authentication)** | `test_authentication_comparison[pymysql-native_user]`<br>**Failed: Authentication behavior differs for native_user with pymysql: 8.0 is SUCCESS, 8.4 is FAIL**
 
----
+**Test Output:**
+```
+--- Comparing auth for user 'native_user' with driver 'pymysql' ---
+Failed to connect to mysql84 using pymysql with user native_user: (1524, "Plugin 'mysql_native_password' is not loaded")
+Result for MySQL 8.0: SUCCESS
+Result for MySQL 8.4: FAIL
+``` |
+| **시스템 변수 (System Variable)** | `test_variable_comparison[innodb_buffer_pool_in_core_file]`<br>**AssertionError: Variable 'innodb_buffer_pool_in_core_file' differs: 8.0 is 'ON', 8.4 is 'OFF'
+assert 'ON' == 'OFF'
+  
+  [0m[91m- OFF[39;49;00m[90m[39;49;00m
+  [92m+ ON[39;49;00m[90m[39;49;00m**
 
-## 2. 주요 차이점 및 실패 항목 분석
+**Test Output:**
+```
+--- Comparing variable: innodb_buffer_pool_in_core_file ---
+[mysql80] innodb_buffer_pool_in_core_file = ON
+[mysql84] innodb_buffer_pool_in_core_file = OFF
+``` |
+| **시스템 변수 (System Variable)** | `test_global_variables_comparison`<br>**Failed: Differences found in global variables. See stdout for details.**
 
-실패한 7개의 항목은 크게 **인증 방식의 변화**, **시스템 변수 기본값 변경**, **시스템 스키마 구조 변경**으로 분류됩니다.
+**Test Output:**
+```
+--- Comparing ALL global variables ---
 
-### 2.1. 인증 (Authentication) 관련 실패
-MySQL 8.4에서는 보안 강화를 위해 일부 레거시 인증 방식이나 드라이버 호환성에서 차이가 발생했습니다.
+### Variables with Different Values:
+| Variable Name | MySQL 8.0 Value | MySQL 8.4 Value |
+|---------------|-----------------|-----------------|
+| `build_id` | `cd3aff82d0fd9b8a7b130b0b45cb5fdf7e2f29cf` | `dfd0d55f42f50a10cda6fd9baa83690e88c2511a` |
+| `character_sets_dir` | `/usr/share/mysql-8.0/charsets/` | `/usr/share/mysql-8.4/charsets/` |
+| `general_log_file` | `/var/lib/mysql/6a507411ba98.log` | `/var/lib/mysql/16e49a77b6ce.log` |
+| `group_replication_consistency` | `EVENTUAL` | `BEFORE_ON_PRIMARY_FAILOVER` |
+| `hostname` | `6a507411ba98` | `16e49a77b6ce` |
+| `innodb_adaptive_hash_index` | `ON` | `OFF` |
+| `innodb_buffer_pool_in_core_file` | `ON` | `OFF` |
+| `innodb_change_buffering` | `all` | `none` |
+| `innodb_doublewrite_pages` | `4` | `128` |
+| `innodb_flush_method` | `fsync` | `O_DIRECT` |
+| `innodb_io_capacity` | `200` | `10000` |
+| `innodb_io_capacity_max` | `2000` | `20000` |
+| `innodb_log_buffer_size` | `16777216` | `67108864` |
+| `innodb_read_io_threads` | `4` | `11` |
+| `innodb_use_fdatasync` | `OFF` | `ON` |
+| `innodb_version` | `8.0.42` | `8.4.7` |
+| `lc_messages_dir` | `/usr/share/mysql-8.0/` | `/usr/share/mysql-8.4/` |
+| `optimizer_switch` | `index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,use_invisible_indexes=off,skip_scan=on,hash_join=on,subquery_to_derived=off,prefer_ordering_index=on,hypergraph_optimizer=off,derived_condition_pushdown=on` | `index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,use_invisible_indexes=off,skip_scan=on,hash_join=on,subquery_to_derived=off,prefer_ordering_index=on,hypergraph_optimizer=off,derived_condition_pushdown=on,hash_set_operations=on` |
+| `performance_schema_error_size` | `5319` | `5550` |
+| `performance_schema_max_memory_classes` | `450` | `470` |
+| `performance_schema_max_rwlock_classes` | `60` | `100` |
+| `performance_schema_max_statement_classes` | `219` | `220` |
+| `pid_file` | `/var/lib/mysql/6a507411ba98.pid` | `/var/lib/mysql/16e49a77b6ce.pid` |
+| `pseudo_thread_id` | `29` | `35` |
+| `relay_log` | `6a507411ba98-relay-bin` | `16e49a77b6ce-relay-bin` |
+| `relay_log_basename` | `/var/lib/mysql/6a507411ba98-relay-bin` | `/var/lib/mysql/16e49a77b6ce-relay-bin` |
+| `relay_log_index` | `/var/lib/mysql/6a507411ba98-relay-bin.index` | `/var/lib/mysql/16e49a77b6ce-relay-bin.index` |
+| `server_uuid` | `603891b5-dca7-11f0-8343-5a559a7196f3` | `605126eb-dca7-11f0-8f34-06c1c19faa35` |
+| `slow_query_log_file` | `/var/lib/mysql/6a507411ba98-slow.log` | `/var/lib/mysql/16e49a77b6ce-slow.log` |
+| `statement_id` | `22287` | `22407` |
+| `temptable_max_mmap` | `1073741824` | `0` |
+| `temptable_use_mmap` | `ON` | `OFF` |
+| `timestamp` | `1766538819.299395` | `1766538819.326936` |
+| `version` | `8.0.42` | `8.4.7` |
 
-> [!WARNING]
-> **mysql.connector 및 pymysql 드라이버 호환성 이슈**
-> - `native_user`, `sha2_user` 모두 8.4 환경에서 인증 실패 발생.
-> - **원인:** 8.4에서 기본 인증 플러그인 정책 변화 및 드라이버의 `cryptography` 패키지 의존성 문제.
+### Variables Unique to MySQL 8.0:
+| Variable Name | MySQL 8.0 Value |
+|---------------|-----------------|
+| `avoid_temporal_upgrade` | `OFF` |
+| `binlog_transaction_dependency_tracking` | `COMMIT_ORDER` |
+| `default_authentication_plugin` | `mysql_native_password` |
+| `expire_logs_days` | `0` |
+| `have_openssl` | `YES` |
+| `have_ssl` | `YES` |
+| `log_bin_use_v1_row_events` | `OFF` |
+| `master_info_repository` | `TABLE` |
+| `new` | `OFF` |
+| `old` | `OFF` |
+| `relay_log_info_file` | `relay-log.info` |
+| `relay_log_info_repository` | `TABLE` |
+| `show_old_temporals` | `OFF` |
+| `slave_rows_search_algorithms` | `INDEX_SCAN,HASH_SCAN` |
+| `transaction_write_set_extraction` | `XXHASH64` |
 
-| 테스트 케이스 | 상세 에러 메시지 |
-| :--- | :--- |
-| `mysql.connector-native_user` | `Access denied for user 'native_user'@'_gateway' (using password: YES)` |
-| `mysql.connector-sha2_user` | `Access denied for user 'sha2_user'@'_gateway' (using password: YES)` |
-| `pymysql-native_user` | `'cryptography' package is required for sha256_password or caching_sha2_password` |
-| `pymysql-sha2_user` | `'cryptography' package is required for sha256_password or caching_sha2_password` |
+### Variables Unique to MySQL 8.4:
+| Variable Name | MySQL 8.4 Value |
+|---------------|-----------------|
+| `explain_json_format_version` | `1` |
+| `performance_schema_max_meter_classes` | `30` |
+| `performance_schema_max_metric_classes` | `600` |
+| `restrict_fk_on_non_standard_key` | `ON` |
+| `set_operations_buffer_size` | `262144` |
+| `tls_certificates_enforced_validation` | `OFF` |
+``` |
+| **시스템 스키마 (System Schema)** | `test_information_schema_table_diff`<br>**AssertionError: information_schema.tables differ between versions.
+assert (not set() and not {'TABLESPACES'})**
 
-### 2.2. 시스템 변수 및 스키마 차이
+**Test Output:**
+```
+--- Comparing information_schema.tables ---
+Tables removed in 8.4 (were in 8.0): ['TABLESPACES']
+``` |
+| **시스템 스키마 (System Schema)** | `test_information_schema_column_diff`<br>**AssertionError: information_schema.columns differ between versions.
+assert (not set() and not {('TABLESPACES', 'AUTOEXTEND_SIZE'), ('TABLESPACES', 'ENGINE'), ('TABLESPACES', 'EXTENT_SIZE'), ('TABLESPACES', 'LOGFILE_GROUP_NAME'), ('TABLESPACES', 'MAXIMUM_SIZE'), ('TABLESPACES', 'NODEGROUP_ID'), ...})**
 
-| 분류 | 테스트 항목 | 차이점 상세 |
-| :--- | :--- | :--- |
-| **시스템 변수** | `innodb_buffer_pool_in_core_file` | 8.0: `ON` → 8.4: `OFF` (기본값 변경) |
-| **시스템 스키마** | `information_schema.tables` | 8.4에서 `TABLESPACES` 테이블 제거됨 |
-| **시스템 스키마** | `information_schema.columns` | `TABLESPACES` 관련 컬럼 9개 제거됨 |
+**Test Output:**
+```
+--- Comparing information_schema.columns ---
+Columns removed in 8.4 (were in 8.0): [('TABLESPACES', 'AUTOEXTEND_SIZE'), ('TABLESPACES', 'ENGINE'), ('TABLESPACES', 'EXTENT_SIZE'), ('TABLESPACES', 'LOGFILE_GROUP_NAME'), ('TABLESPACES', 'MAXIMUM_SIZE'), ('TABLESPACES', 'NODEGROUP_ID'), ('TABLESPACES', 'TABLESPACE_COMMENT'), ('TABLESPACES', 'TABLESPACE_NAME'), ('TABLESPACES', 'TABLESPACE_TYPE')]
+``` |
 
----
+## 3. 성능 테스트 결과 (경향성)
 
----
+| 측정 항목 | MySQL 8.0.42 | MySQL 8.4.7 | 비교 |
+|---|---|---|---|
+| Insert TPS (높을수록 좋음) | 156,575.62 | 162,460.73 | **+3.76%** |
+| Select Latency (ms) (낮을수록 좋음) | 0.3777 | 0.3720 | **-1.49%** |
 
-## 3. Story 2.1: Foreign Key(FK) 제약 및 스키마 차이 검증
+## 4. 전체 시스템 변수 비교 (Global Variables Comparison)
 
-MySQL 8.0과 8.4 버전에서 FK 생성 시의 제약 사항과 동작 차이를 검증한 결과입니다.
-
-> [!NOTE]
-> **검증 요약:** 두 버전 모두 FK 생성 규칙(PK/Unique 제약 필요, 타입 일치 등)을 엄격하게 준수하고 있으며, 8.4에서는 일부 에러 메시지가 더 구체적으로 변경되었습니다.
-
-| 테스트 항목 | 검증 내용 | 결과 | 상세 (MySQL 8.0 / 8.4) |
-| :--- | :--- | :--- | :--- |
-| **부모 테이블 제약 미비** | 부모 테이블에 PK/Unique 제약이 없는 경우 FK 생성 시도 | **성공 (실패 유도)** | 8.0: Error 1822 / 8.4: **Error 6125** (메시지 구체화) |
-| **컬럼 타입 불일치** | 부모/자식 컬럼의 데이터 타입이 다른 경우 | **성공 (실패 유도)** | 두 버전 모두 Error 3780 발생 (Incompatible types) |
-| **컬럼 길이 불일치** | 부모/자식 컬럼의 길이는 다르지만 호환 가능한 경우 | **성공 (생성 허용)** | 두 버전 모두 FK 생성 성공 (정상 동작) |
-| **Collation 불일치** | 부모/자식 컬럼의 Collation이 다른 경우 | **성공 (실패 유도)** | 두 버전 모두 Error 3780 발생 (Incompatible collation) |
-
----
-
-## 4. 성능 테스트 결과 (경향성)
-
-MySQL 8.4.7은 8.0.42 대비 전반적으로 소폭 향상된 성능을 보여줍니다.
-
-| 측정 항목 | MySQL 8.0.42 | MySQL 8.4.7 | 변화율 |
-| :--- | :--- | :--- | :--- |
-| **Insert TPS** (높을수록 좋음) | 154,925.49 | 157,251.29 | <span style="color:green">**+1.50%** ↑</span> |
-| **Select Latency** (ms) | 0.4107 | 0.3979 | <span style="color:green">**-3.13%** ↓</span> |
-
----
-
-## 5. 전체 시스템 변수 비교 (Global Variables)
-
-### 5.1. 변수 통계 요약
+### 4.1. 요약
 
 | 항목 | MySQL 8.0.42 | MySQL 8.4.7 | 차이 |
-| :--- | :--- | :--- | :--- |
-| **전체 변수 수** | 631 | 622 | -9 |
-| **8.0 전용 변수** | 15 | - | 제거됨 |
-| **8.4 전용 변수** | - | 6 | 신규 추가 |
-| **값이 다른 변수** | 28 | 28 | 기본값 변경 등 |
+|---|---|---|---|
+| 전체 변수 수 | 631 | 622 | -9:+ |
+| 8.0에만 존재 | 15 | - | - |
+| 8.4에만 존재 | - | 6 | - |
+| 값이 다른 변수 | 28 | 28 | - |
 
-### 5.2. 값이 다른 변수 상세 (총 28개)
-
-> [!TIP]
-> 가독성을 위해 28개의 변수를 **성능/InnoDB**, **시스템 경로/빌드**, **기타 설정**으로 분류하여 정리했습니다.
-
-#### A. 성능 및 InnoDB 관련 변수 (핵심 변경 사항)
-8.4 버전에서 고성능 환경 최적화를 위해 기본값이 상향 조정된 항목들입니다.
-
-| 변수명 | MySQL 8.0.42 | MySQL 8.4.7 | 비고 |
-| :--- | :--- | :--- | :--- |
-| `innodb_io_capacity` | 200 | **10000** | 대폭 상향 |
-| `innodb_io_capacity_max` | 2000 | **20000** | 대폭 상향 |
-| `innodb_log_buffer_size` | 16777216 (16MB) | **67108864 (64MB)** | 4배 증가 |
-| `innodb_flush_method` | `fsync` | `O_DIRECT` | 기본값 변경 |
-| `innodb_read_io_threads` | 4 | 11 | |
-| `innodb_doublewrite_pages` | 4 | 128 | |
-| `innodb_adaptive_hash_index` | `ON` | `OFF` | |
-| `innodb_change_buffering` | `all` | `none` | |
-| `innodb_use_fdatasync` | `OFF` | `ON` | |
-| `temptable_max_mmap` | 1073741824 | 0 | |
-| `temptable_use_mmap` | `ON` | `OFF` | |
-
-#### B. 시스템 경로, 빌드 및 버전 정보
-환경 차이나 빌드 시점에 따라 달라지는 정보성 변수들입니다.
+### 4.2. 값이 다른 변수
 
 | 변수명 | MySQL 8.0.42 | MySQL 8.4.7 |
-| :--- | :--- | :--- |
-| `innodb_version` | 8.0.42 | 8.4.7 |
-| `build_id` | cd3aff82... | dfd0d55f... |
+|---|---|---|
+| `build_id` | cd3aff82d0fd9b8a7b130b0b45cb5fdf7e2f29cf | dfd0d55f42f50a10cda6fd9baa83690e88c2511a |
 | `character_sets_dir` | /usr/share/mysql-8.0/charsets/ | /usr/share/mysql-8.4/charsets/ |
-| `lc_messages_dir` | /usr/share/mysql-8.0/ | /usr/share/mysql-8.4/ |
 | `general_log_file` | /var/lib/mysql/51a1645acb81.log | /var/lib/mysql/042757887f10.log |
+| `group_replication_consistency` | EVENTUAL | BEFORE_ON_PRIMARY_FAILOVER |
+| `innodb_adaptive_hash_index` | ON | OFF |
+| `innodb_buffer_pool_in_core_file` | ON | OFF |
+| `innodb_change_buffering` | all | none |
+| `innodb_doublewrite_pages` | 4 | 128 |
+| `innodb_flush_method` | fsync | O_DIRECT |
+| `innodb_io_capacity` | 200 | 10000 |
+| `innodb_io_capacity_max` | 2000 | 20000 |
+| `innodb_log_buffer_size` | 16777216 | 67108864 |
+| `innodb_read_io_threads` | 4 | 11 |
+| `innodb_use_fdatasync` | OFF | ON |
+| `innodb_version` | 8.0.42 | 8.4.7 |
+| `lc_messages_dir` | /usr/share/mysql-8.0/ | /usr/share/mysql-8.4/ |
+| `optimizer_switch` | index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,use_invisible_indexes=off,skip_scan=on,hash_join=on,subquery_to_derived=off,prefer_ordering_index=on,hypergraph_optimizer=off,derived_condition_pushdown=on | index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,use_invisible_indexes=off,skip_scan=on,hash_join=on,subquery_to_derived=off,prefer_ordering_index=on,hypergraph_optimizer=off,derived_condition_pushdown=on,hash_set_operations=on |
+| `performance_schema_error_size` | 5319 | 5550 |
+| `performance_schema_max_memory_classes` | 450 | 470 |
+| `performance_schema_max_rwlock_classes` | 60 | 100 |
+| `performance_schema_max_statement_classes` | 219 | 220 |
 | `pid_file` | /var/lib/mysql/51a1645acb81.pid | /var/lib/mysql/042757887f10.pid |
 | `relay_log` | 51a1645acb81-relay-bin | 042757887f10-relay-bin |
 | `relay_log_basename` | /var/lib/mysql/51a1645acb81-relay-bin | /var/lib/mysql/042757887f10-relay-bin |
 | `relay_log_index` | /var/lib/mysql/51a1645acb81-relay-bin.index | /var/lib/mysql/042757887f10-relay-bin.index |
 | `slow_query_log_file` | /var/lib/mysql/51a1645acb81-slow.log | /var/lib/mysql/042757887f10-slow.log |
+| `temptable_max_mmap` | 1073741824 | 0 |
+| `temptable_use_mmap` | ON | OFF |
 
-#### C. 기타 설정 및 모니터링 변수
-복제 일관성, 옵티마이저 스위치 및 Performance Schema 관련 변경 사항입니다.
+### 4.3. MySQL 8.4.7에 추가된 변수
 
-| 변수명 | MySQL 8.0.42 | MySQL 8.4.7 |
-| :--- | :--- | :--- |
-| `group_replication_consistency` | `EVENTUAL` | `BEFORE_ON_PRIMARY_FAILOVER` |
-| `optimizer_switch` | (기존 설정) | (기존) + `hash_set_operations=on` |
-| `performance_schema_error_size` | 5319 | 5550 |
-| `performance_schema_max_memory_classes` | 450 | 470 |
-| `performance_schema_max_rwlock_classes` | 60 | 100 |
-| `performance_schema_max_statement_classes` | 219 | 220 |
-| `innodb_buffer_pool_in_core_file` | `ON` | `OFF` |
+| 변수명 |
+|---|
+| `explain_json_format_version` |
+| `performance_schema_max_meter_classes` |
+| `performance_schema_max_metric_classes` |
+| `restrict_fk_on_non_standard_key` |
+| `set_operations_buffer_size` |
+| `tls_certificates_enforced_validation` |
 
-### 5.3. MySQL 8.4.7 신규 추가 변수
-- `explain_json_format_version`
-- `performance_schema_max_meter_classes`
-- `performance_schema_max_metric_classes`
-- `restrict_fk_on_non_standard_key`
-- `set_operations_buffer_size`
-- `tls_certificates_enforced_validation`
+### 4.4. MySQL 8.0.42에서 제거된 변수
 
-### 5.4. MySQL 8.4.7에서 제거된 변수 (8.0에만 존재)
-- `avoid_temporal_upgrade`, `binlog_transaction_dependency_tracking`, `default_authentication_plugin`, `expire_logs_days`, `have_openssl`, `have_ssl`, `log_bin_use_v1_row_events`, `master_info_repository`, `new`, `old`, `relay_log_info_file`, `relay_log_info_repository`, `show_old_temporals`, `slave_rows_search_algorithms`, `transaction_write_set_extraction`
+| 변수명 |
+|---|
+| `avoid_temporal_upgrade` |
+| `binlog_transaction_dependency_tracking` |
+| `default_authentication_plugin` |
+| `expire_logs_days` |
+| `have_openssl` |
+| `have_ssl` |
+| `log_bin_use_v1_row_events` |
+| `master_info_repository` |
+| `new` |
+| `old` |
+| `relay_log_info_file` |
+| `relay_log_info_repository` |
+| `show_old_temporals` |
+| `slave_rows_search_algorithms` |
+| `transaction_write_set_extraction` |
 
----
+## 5. 인증 방식 변경 및 대응 (Authentication Fix & Impact)
 
-## 6. 전체 성공 테스트 내역 (Passed Tests - 29건)
+MySQL 8.4에서는 `caching_sha2_password`가 기본 인증 플러그인으로 사용됩니다. 테스트 과정에서 발견된 이슈와 해결 과정을 기록합니다.
 
-성공한 테스트 항목들을 카테고리별로 분류하였습니다.
+### 5.1. 이슈 현황
+- **현상:** `sha2_user` 접속 시 `'cryptography' package is required for sha256_password or caching_sha2_password` 오류 발생하며 접속 실패.
+- **원인:** Python 환경에 `caching_sha2_password` 처리를 위한 `cryptography` 패키지가 누락됨.
 
-### 6.1. Schema & FK 호환성 (8건)
-- `test_fk_no_parent_pk[mysql80/84]`
-- `test_fk_column_type_mismatch[mysql80/84]`
-- `test_fk_column_length_mismatch[mysql80/84]`
-- `test_fk_collation_mismatch[mysql80/84]`
+### 5.2. 해결 과정 및 결과
+1. **패키지 설치:** Python 환경(`requirements.txt`)에 `cryptography` 패키지 추가 및 설치.
+2. **재시험 결과:** `sha2_user`가 MySQL 8.0 및 8.4 모두에서 **정상 접속 성공** 확인.
 
-### 6.2. 성능 지표 측정 (4건)
-- `test_insert_tps[mysql80/84]`
-- `test_select_latency[mysql80/84]`
-
-### 6.3. 스키마 호환성 상세 (8건)
-- `test_pk_less_table[mysql80/84]`
-- `test_collation_join[mysql80/84]`
-- `test_new_reserved_word[mysql80/84]`
-- `test_removed_reserved_word[mysql80/84]`
-
-### 6.4. 시스템 변수 및 스키마 검증 (9건)
-- `test_variable_comparison[binlog_expire_logs_seconds]`
-- `test_variable_comparison[innodb_flush_neighbors]`
-- `test_variable_comparison[innodb_flush_log_at_trx_commit]`
-- `test_variable_comparison[innodb_log_file_size]`
-- `test_variable_comparison[gtid_mode]`
-- `test_variable_comparison[enforce_gtid_consistency]`
-- `test_variable_comparison[log_bin]`
-- `test_variable_comparison[binlog_row_image]`
-- `test_mysql_db_table_diff`
+### 5.3. 사용자 관점의 영향도 검토
+> [!IMPORTANT]
+> **MySQL 8.4 업그레이드 시 주의 사항**
+> 1. **클라이언트 라이브러리 의존성:** Python 등 클라이언트 환경에서 `caching_sha2_password`를 지원하기 위한 추가 라이브러리(예: `cryptography`)가 필요할 수 있습니다.
+> 2. **Native Password 지원 중단:** MySQL 8.4에서는 `mysql_native_password` 플러그인이 기본적으로 비활성화되어 있습니다. 기존 `native_user` 방식의 계정은 접속이 실패하므로, `caching_sha2_password`로의 전환이 권장됩니다.
