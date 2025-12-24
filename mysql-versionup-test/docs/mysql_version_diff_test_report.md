@@ -1,50 +1,80 @@
-# MySQL 8.0.42 vs 8.4.7 비교 테스트 자동화 보고서
-**보고서 생성일:** 2025-12-24 10:17:31
+# MySQL 8.0.42 vs 8.4.7 비교 테스트 결과 보고서
+> **보고서 생성일:** 2025-12-24 10:27:43
 
-## 1. 테스트 요약
-- **전체 테스트:** 37
-- **성공:** 31
-- **실패:** 6
-- **실행 시간:** 13.41초
+## 1. 테스트 개요
+본 보고서는 MySQL 8.0.42 버전에서 8.4.7 버전으로 업그레이드 시 발생할 수 있는 호환성 및 성능 변화를 분석한 결과입니다.
 
-## 2. 주요 차이점 분석 (실패 항목)
-
-| 테스트 분류 | 상세 내용 |
+| 항목 | 결과 |
 |---|---|
-| **인증 (Authentication)** | `test_authentication_comparison[mysql.connector-native_user]`<br>**Failed: Authentication behavior differs for native_user with mysql.connector: 8.0 is SUCCESS, 8.4 is FAIL**
+| **전체 테스트 케이스** | 37 |
+| **성공 (Pass)** | 31 |
+| **실패 (Fail)** | 6 |
+| **총 소요 시간** | 13.41초 |
 
-**Test Output:**
-```
+## 2. 인증 방식 변경 및 대응 (핵심 요약)
+
+> [!IMPORTANT]
+> **MySQL 8.4 업그레이드 시 가장 주의해야 할 변경 사항은 인증 방식입니다.**
+
+### ✅ sha2_user 접속 성공 (해결 완료)
+- **현상:** 초기 테스트 시 `cryptography` 패키지 누락으로 인한 접속 실패 발생.
+- **조치:** Python 환경에 `cryptography` 패키지 설치 완료.
+- **결과:** MySQL 8.0 및 8.4 모두에서 **정상 접속 확인**.
+
+### ⚠️ native_user 접속 실패 (의도된 동작)
+- **현상:** MySQL 8.4에서 `native_user` 접속 실패.
+- **원인:** MySQL 8.4부터 `mysql_native_password` 플러그인이 기본적으로 비활성화됨.
+- **권장:** 기존 계정을 `caching_sha2_password` 방식으로 전환하십시오.
+
+## 3. 주요 차이점 및 실패 항목 분석
+
+| 분류 | 테스트 항목 | 요약 |
+|---|---|---|
+| 인증 | `test_authentication_comparison[mysql.connector-native_user]` | Failed: Authentication behavior differs for native_user with mysql.connector: 8.0 is SUCCESS, 8.4 is FAIL |
+| 인증 | `test_authentication_comparison[pymysql-native_user]` | Failed: Authentication behavior differs for native_user with pymysql: 8.0 is SUCCESS, 8.4 is FAIL |
+| 시스템 변수 | `test_variable_comparison[innodb_buffer_pool_in_core_file]` | AssertionError: Variable 'innodb_buffer_pool_in_core_file' differs: 8.0 is 'ON', 8.4 is 'OFF' |
+| 시스템 변수 | `test_global_variables_comparison` | Failed: Differences found in global variables. See stdout for details. |
+| 시스템 스키마 | `test_information_schema_table_diff` | AssertionError: information_schema.tables differ between versions. |
+| 시스템 스키마 | `test_information_schema_column_diff` | AssertionError: information_schema.columns differ between versions. |
+
+### 📄 상세 오류 로그
+
+<details>
+<summary>🔍 <b>test_authentication_comparison[mysql.connector-native_user]</b> 상세 로그 보기</summary>
+
+```text
 --- Comparing auth for user 'native_user' with driver 'mysql.connector' ---
 Failed to connect to mysql84 using mysql.connector with user native_user: 1524 (HY000): Plugin 'mysql_native_password' is not loaded
 Result for MySQL 8.0: SUCCESS
 Result for MySQL 8.4: FAIL
-``` |
-| **인증 (Authentication)** | `test_authentication_comparison[pymysql-native_user]`<br>**Failed: Authentication behavior differs for native_user with pymysql: 8.0 is SUCCESS, 8.4 is FAIL**
-
-**Test Output:**
 ```
+</details>
+
+<details>
+<summary>🔍 <b>test_authentication_comparison[pymysql-native_user]</b> 상세 로그 보기</summary>
+
+```text
 --- Comparing auth for user 'native_user' with driver 'pymysql' ---
 Failed to connect to mysql84 using pymysql with user native_user: (1524, "Plugin 'mysql_native_password' is not loaded")
 Result for MySQL 8.0: SUCCESS
 Result for MySQL 8.4: FAIL
-``` |
-| **시스템 변수 (System Variable)** | `test_variable_comparison[innodb_buffer_pool_in_core_file]`<br>**AssertionError: Variable 'innodb_buffer_pool_in_core_file' differs: 8.0 is 'ON', 8.4 is 'OFF'
-assert 'ON' == 'OFF'
-  
-  [0m[91m- OFF[39;49;00m[90m[39;49;00m
-  [92m+ ON[39;49;00m[90m[39;49;00m**
-
-**Test Output:**
 ```
+</details>
+
+<details>
+<summary>🔍 <b>test_variable_comparison[innodb_buffer_pool_in_core_file]</b> 상세 로그 보기</summary>
+
+```text
 --- Comparing variable: innodb_buffer_pool_in_core_file ---
 [mysql80] innodb_buffer_pool_in_core_file = ON
 [mysql84] innodb_buffer_pool_in_core_file = OFF
-``` |
-| **시스템 변수 (System Variable)** | `test_global_variables_comparison`<br>**Failed: Differences found in global variables. See stdout for details.**
-
-**Test Output:**
 ```
+</details>
+
+<details>
+<summary>🔍 <b>test_global_variables_comparison</b> 상세 로그 보기</summary>
+
+```text
 --- Comparing ALL global variables ---
 
 ### Variables with Different Values:
@@ -113,43 +143,45 @@ assert 'ON' == 'OFF'
 | `restrict_fk_on_non_standard_key` | `ON` |
 | `set_operations_buffer_size` | `262144` |
 | `tls_certificates_enforced_validation` | `OFF` |
-``` |
-| **시스템 스키마 (System Schema)** | `test_information_schema_table_diff`<br>**AssertionError: information_schema.tables differ between versions.
-assert (not set() and not {'TABLESPACES'})**
-
-**Test Output:**
 ```
+</details>
+
+<details>
+<summary>🔍 <b>test_information_schema_table_diff</b> 상세 로그 보기</summary>
+
+```text
 --- Comparing information_schema.tables ---
 Tables removed in 8.4 (were in 8.0): ['TABLESPACES']
-``` |
-| **시스템 스키마 (System Schema)** | `test_information_schema_column_diff`<br>**AssertionError: information_schema.columns differ between versions.
-assert (not set() and not {('TABLESPACES', 'AUTOEXTEND_SIZE'), ('TABLESPACES', 'ENGINE'), ('TABLESPACES', 'EXTENT_SIZE'), ('TABLESPACES', 'LOGFILE_GROUP_NAME'), ('TABLESPACES', 'MAXIMUM_SIZE'), ('TABLESPACES', 'NODEGROUP_ID'), ...})**
-
-**Test Output:**
 ```
+</details>
+
+<details>
+<summary>🔍 <b>test_information_schema_column_diff</b> 상세 로그 보기</summary>
+
+```text
 --- Comparing information_schema.columns ---
 Columns removed in 8.4 (were in 8.0): [('TABLESPACES', 'AUTOEXTEND_SIZE'), ('TABLESPACES', 'ENGINE'), ('TABLESPACES', 'EXTENT_SIZE'), ('TABLESPACES', 'LOGFILE_GROUP_NAME'), ('TABLESPACES', 'MAXIMUM_SIZE'), ('TABLESPACES', 'NODEGROUP_ID'), ('TABLESPACES', 'TABLESPACE_COMMENT'), ('TABLESPACES', 'TABLESPACE_NAME'), ('TABLESPACES', 'TABLESPACE_TYPE')]
-``` |
+```
+</details>
 
-## 3. 성능 테스트 결과 (경향성)
+## 4. 성능 테스트 결과 (경향성)
 
-| 측정 항목 | MySQL 8.0.42 | MySQL 8.4.7 | 비교 |
+| 측정 항목 | MySQL 8.0.42 | MySQL 8.4.7 | 변화율 |
 |---|---|---|---|
-| Insert TPS (높을수록 좋음) | 156,575.62 | 162,460.73 | **+3.76%** |
-| Select Latency (ms) (낮을수록 좋음) | 0.3777 | 0.3720 | **-1.49%** |
+| **Insert TPS** (높을수록 좋음) | 156,575.62 | 162,460.73 | **+3.76%** |
+| **Select Latency** (ms) (낮을수록 좋음) | 0.3777 | 0.3720 | **-1.49%** |
 
-## 4. 전체 시스템 변수 비교 (Global Variables Comparison)
+## 5. 전체 시스템 변수 비교
 
-### 4.1. 요약
-
-| 항목 | MySQL 8.0.42 | MySQL 8.4.7 | 차이 |
+| 구분 | MySQL 8.0.42 | MySQL 8.4.7 | 차이 |
 |---|---|---|---|
-| 전체 변수 수 | 631 | 622 | -9:+ |
-| 8.0에만 존재 | 15 | - | - |
-| 8.4에만 존재 | - | 6 | - |
-| 값이 다른 변수 | 28 | 28 | - |
+| **전체 변수 수** | 631 | 622 | -9 |
+| **값이 다른 변수** | 28 | 28 | - |
 
-### 4.2. 값이 다른 변수
+### 5.1. 값이 다른 주요 변수 (상세)
+
+<details>
+<summary>📋 전체 리스트 보기</summary>
 
 | 변수명 | MySQL 8.0.42 | MySQL 8.4.7 |
 |---|---|---|
@@ -181,8 +213,12 @@ Columns removed in 8.4 (were in 8.0): [('TABLESPACES', 'AUTOEXTEND_SIZE'), ('TAB
 | `slow_query_log_file` | /var/lib/mysql/51a1645acb81-slow.log | /var/lib/mysql/042757887f10-slow.log |
 | `temptable_max_mmap` | 1073741824 | 0 |
 | `temptable_use_mmap` | ON | OFF |
+</details>
 
-### 4.3. MySQL 8.4.7에 추가된 변수
+### 5.2. 버전별 고유 변수
+
+<details>
+<summary>➕ MySQL 8.4.7에 추가된 변수</summary>
 
 | 변수명 |
 |---|
@@ -192,8 +228,10 @@ Columns removed in 8.4 (were in 8.0): [('TABLESPACES', 'AUTOEXTEND_SIZE'), ('TAB
 | `restrict_fk_on_non_standard_key` |
 | `set_operations_buffer_size` |
 | `tls_certificates_enforced_validation` |
+</details>
 
-### 4.4. MySQL 8.0.42에서 제거된 변수
+<details>
+<summary>➖ MySQL 8.0.42에서 제거된 변수</summary>
 
 | 변수명 |
 |---|
@@ -212,21 +250,4 @@ Columns removed in 8.4 (were in 8.0): [('TABLESPACES', 'AUTOEXTEND_SIZE'), ('TAB
 | `show_old_temporals` |
 | `slave_rows_search_algorithms` |
 | `transaction_write_set_extraction` |
-
-## 5. 인증 방식 변경 및 대응 (Authentication Fix & Impact)
-
-MySQL 8.4에서는 `caching_sha2_password`가 기본 인증 플러그인으로 사용됩니다. 테스트 과정에서 발견된 이슈와 해결 과정을 기록합니다.
-
-### 5.1. 이슈 현황
-- **현상:** `sha2_user` 접속 시 `'cryptography' package is required for sha256_password or caching_sha2_password` 오류 발생하며 접속 실패.
-- **원인:** Python 환경에 `caching_sha2_password` 처리를 위한 `cryptography` 패키지가 누락됨.
-
-### 5.2. 해결 과정 및 결과
-1. **패키지 설치:** Python 환경(`requirements.txt`)에 `cryptography` 패키지 추가 및 설치.
-2. **재시험 결과:** `sha2_user`가 MySQL 8.0 및 8.4 모두에서 **정상 접속 성공** 확인.
-
-### 5.3. 사용자 관점의 영향도 검토
-> [!IMPORTANT]
-> **MySQL 8.4 업그레이드 시 주의 사항**
-> 1. **클라이언트 라이브러리 의존성:** Python 등 클라이언트 환경에서 `caching_sha2_password`를 지원하기 위한 추가 라이브러리(예: `cryptography`)가 필요할 수 있습니다.
-> 2. **Native Password 지원 중단:** MySQL 8.4에서는 `mysql_native_password` 플러그인이 기본적으로 비활성화되어 있습니다. 기존 `native_user` 방식의 계정은 접속이 실패하므로, `caching_sha2_password`로의 전환이 권장됩니다.
+</details>

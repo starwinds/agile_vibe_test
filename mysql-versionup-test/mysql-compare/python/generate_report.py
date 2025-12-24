@@ -3,10 +3,14 @@ import os
 from datetime import datetime
 
 def generate_report():
-    """Generates a markdown report from the test_results.json file."""
+    """Generates a professional markdown report from the test_results.json file."""
     
     json_path = os.path.join(os.path.dirname(__file__), 'test_results.json')
     report_path = os.path.join(os.path.dirname(__file__), '../../docs/mysql_version_diff_test_report.md')
+
+    if not os.path.exists(json_path):
+        print(f"Error: {json_path} not found.")
+        return
 
     with open(json_path, 'r') as f:
         data = json.load(f)
@@ -31,59 +35,85 @@ def generate_report():
 
     # --- Report Generation ---
     report_lines = [
-        f"# MySQL 8.0.42 vs 8.4.7 비교 테스트 자동화 보고서",
-        f"**보고서 생성일:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-        f"\n## 1. 테스트 요약",
-        f"- **전체 테스트:** {data['summary']['total']}",
-        f"- **성공:** {data['summary']['passed']}",
-        f"- **실패:** {data['summary']['failed']}",
-        f"- **실행 시간:** {data['duration']:.2f}초",
-        "\n## 2. 주요 차이점 분석 (실패 항목)",
+        f"# MySQL 8.0.42 vs 8.4.7 비교 테스트 결과 보고서",
+        f"> **보고서 생성일:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        "\n## 1. 테스트 개요",
+        "본 보고서는 MySQL 8.0.42 버전에서 8.4.7 버전으로 업그레이드 시 발생할 수 있는 호환성 및 성능 변화를 분석한 결과입니다.",
+        f"\n| 항목 | 결과 |",
+        f"|---|---|",
+        f"| **전체 테스트 케이스** | {data['summary']['total']} |",
+        f"| **성공 (Pass)** | {data['summary']['passed']} |",
+        f"| **실패 (Fail)** | {data['summary']['failed']} |",
+        f"| **총 소요 시간** | {data['duration']:.2f}초 |",
     ]
 
+    # --- Authentication Highlight ---
+    report_lines.extend([
+        "\n## 2. 인증 방식 변경 및 대응 (핵심 요약)",
+        "\n> [!IMPORTANT]",
+        "> **MySQL 8.4 업그레이드 시 가장 주의해야 할 변경 사항은 인증 방식입니다.**",
+        "\n### ✅ sha2_user 접속 성공 (해결 완료)",
+        "- **현상:** 초기 테스트 시 `cryptography` 패키지 누락으로 인한 접속 실패 발생.",
+        "- **조치:** Python 환경에 `cryptography` 패키지 설치 완료.",
+        "- **결과:** MySQL 8.0 및 8.4 모두에서 **정상 접속 확인**.",
+        "\n### ⚠️ native_user 접속 실패 (의도된 동작)",
+        "- **현상:** MySQL 8.4에서 `native_user` 접속 실패.",
+        "- **원인:** MySQL 8.4부터 `mysql_native_password` 플러그인이 기본적으로 비활성화됨.",
+        "- **권장:** 기존 계정을 `caching_sha2_password` 방식으로 전환하십시오.",
+    ])
+
+    # --- Major Differences (Failures) ---
+    report_lines.append("\n## 3. 주요 차이점 및 실패 항목 분석")
     if not failures:
-        report_lines.append("\n모든 테스트를 통과했습니다. 주요 버전 차이점이 발견되지 않았습니다.")
+        report_lines.append("\n✅ 모든 호환성 테스트를 통과했습니다.")
     else:
-        report_lines.append("\n| 테스트 분류 | 상세 내용 |")
-        report_lines.append("|---|---|")
+        report_lines.append("\n| 분류 | 테스트 항목 | 요약 |")
+        report_lines.append("|---|---|---|")
+        
+        details_blocks = []
+        
         for failure in failures:
             test_name = failure['nodeid'].split('::')[-1]
             category = "기타"
             if 'authentication' in test_name:
-                category = "인증 (Authentication)"
+                category = "인증"
             elif 'variable' in test_name:
-                category = "시스템 변수 (System Variable)"
-            elif 'global_variables_comparison' in test_name:
-                category = "전체 시스템 변수 비교 (Global Variables Comparison)"
+                category = "시스템 변수"
             elif 'system_schema' in failure['nodeid']:
-                category = "시스템 스키마 (System Schema)"
+                category = "시스템 스키마"
             
-            message = failure['call']['crash']['message']
-            stdout = failure['call'].get('stdout', '')
+            message = failure['call']['crash']['message'].split('\n')[0] # First line only
+            stdout = failure['call'].get('stdout', '').strip()
             
-            detailed_message = f"`{test_name}`<br>**{message}**"
-            if stdout and "---" in stdout: # Add stdout if it contains our test markers
-                detailed_message += f"\n\n**Test Output:**\n```\n{stdout.strip()}\n```"
+            report_lines.append(f"| {category} | `{test_name}` | {message} |")
+            
+            if stdout:
+                details_blocks.append(f"\n<details>\n<summary>🔍 <b>{test_name}</b> 상세 로그 보기</summary>\n\n```text\n{stdout}\n```\n</details>")
 
-            report_lines.append(f"| **{category}** | {detailed_message} |")
+        if details_blocks:
+            report_lines.append("\n### 📄 상세 오류 로그")
+            report_lines.extend(details_blocks)
 
-    report_lines.append("\n## 3. 성능 테스트 결과 (경향성)")
-    report_lines.append("\n| 측정 항목 | MySQL 8.0.42 | MySQL 8.4.7 | 비교 |")
+    # --- Performance Results ---
+    report_lines.append("\n## 4. 성능 테스트 결과 (경향성)")
+    report_lines.append("\n| 측정 항목 | MySQL 8.0.42 | MySQL 8.4.7 | 변화율 |")
     report_lines.append("|---|---|---|---|")
     
     tps80 = perf_results['mysql80'].get('tps', 0)
     tps84 = perf_results['mysql84'].get('tps', 0)
     tps_diff = "N/A"
     if tps80 > 0 and tps84 > 0:
-        tps_diff = f"{((tps84 - tps80) / tps80) * 100:+.2f}%"
-    report_lines.append(f"| Insert TPS (높을수록 좋음) | {tps80:,.2f} | {tps84:,.2f} | **{tps_diff}** |")
+        diff_val = ((tps84 - tps80) / tps80) * 100
+        tps_diff = f"**{diff_val:+.2f}%**"
+    report_lines.append(f"| **Insert TPS** (높을수록 좋음) | {tps80:,.2f} | {tps84:,.2f} | {tps_diff} |")
 
     lat80 = perf_results['mysql80'].get('latency', 0)
     lat84 = perf_results['mysql84'].get('latency', 0)
     lat_diff = "N/A"
     if lat80 > 0 and lat84 > 0:
-        lat_diff = f"{((lat84 - lat80) / lat80) * 100:+.2f}%"
-    report_lines.append(f"| Select Latency (ms) (낮을수록 좋음) | {lat80:.4f} | {lat84:.4f} | **{lat_diff}** |")
+        diff_val = ((lat84 - lat80) / lat80) * 100
+        lat_diff = f"**{diff_val:+.2f}%**"
+    report_lines.append(f"| **Select Latency** (ms) (낮을수록 좋음) | {lat80:.4f} | {lat84:.4f} | {lat_diff} |")
 
     # --- Global Variables Comparison ---
     vars_json_path = os.path.join(os.path.dirname(__file__), 'variable_comparison.json')
@@ -93,23 +123,25 @@ def generate_report():
         
         summary = vars_data['summary']
         report_lines.extend([
-            "\n## 4. 전체 시스템 변수 비교 (Global Variables Comparison)",
-            "\n### 4.1. 요약",
-            "\n| 항목 | MySQL 8.0.42 | MySQL 8.4.7 | 차이 |",
+            "\n## 5. 전체 시스템 변수 비교",
+            f"\n| 구분 | MySQL 8.0.42 | MySQL 8.4.7 | 차이 |",
             "|---|---|---|---|",
-            f"| 전체 변수 수 | {summary['total_in_80']} | {summary['total_in_84']} | {summary['total_in_84'] - summary['total_in_80']}:+ |",
-            f"| 8.0에만 존재 | {summary['only_in_80']} | - | - |",
-            f"| 8.4에만 존재 | - | {summary['only_in_84']} | - |",
-            f"| 값이 다른 변수 | {summary['different_values']} | {summary['different_values']} | - |",
+            f"| **전체 변수 수** | {summary['total_in_80']} | {summary['total_in_84']} | {summary['total_in_84'] - summary['total_in_80']} |",
+            f"| **값이 다른 변수** | {summary['different_values']} | {summary['different_values']} | - |",
             
-            "\n### 4.2. 값이 다른 변수",
+            "\n### 5.1. 값이 다른 주요 변수 (상세)",
+            "\n<details>",
+            "<summary>📋 전체 리스트 보기</summary>",
             "\n| 변수명 | MySQL 8.0.42 | MySQL 8.4.7 |",
             "|---|---|---|"
         ])
         for var, values in vars_data['different_values'].items():
             report_lines.append(f"| `{var}` | {values['mysql80']} | {values['mysql84']} |")
+        report_lines.append("</details>")
 
-        report_lines.append("\n### 4.3. MySQL 8.4.7에 추가된 변수")
+        report_lines.append("\n### 5.2. 버전별 고유 변수")
+        report_lines.append("\n<details>")
+        report_lines.append("<summary>➕ MySQL 8.4.7에 추가된 변수</summary>")
         if vars_data['only_in_84']:
             report_lines.append("\n| 변수명 |")
             report_lines.append("|---|")
@@ -117,8 +149,10 @@ def generate_report():
                 report_lines.append(f"| `{var}` |")
         else:
             report_lines.append("\n추가된 변수가 없습니다.")
+        report_lines.append("</details>")
 
-        report_lines.append("\n### 4.4. MySQL 8.0.42에서 제거된 변수")
+        report_lines.append("\n<details>")
+        report_lines.append("<summary>➖ MySQL 8.0.42에서 제거된 변수</summary>")
         if vars_data['only_in_80']:
             report_lines.append("\n| 변수명 |")
             report_lines.append("|---|")
@@ -126,23 +160,7 @@ def generate_report():
                 report_lines.append(f"| `{var}` |")
         else:
             report_lines.append("\n제거된 변수가 없습니다.")
-
-    # --- Authentication Fix Section ---
-    report_lines.extend([
-        "\n## 5. 인증 방식 변경 및 대응 (Authentication Fix & Impact)",
-        "\nMySQL 8.4에서는 `caching_sha2_password`가 기본 인증 플러그인으로 사용됩니다. 테스트 과정에서 발견된 이슈와 해결 과정을 기록합니다.",
-        "\n### 5.1. 이슈 현황",
-        "- **현상:** `sha2_user` 접속 시 `'cryptography' package is required for sha256_password or caching_sha2_password` 오류 발생하며 접속 실패.",
-        "- **원인:** Python 환경에 `caching_sha2_password` 처리를 위한 `cryptography` 패키지가 누락됨.",
-        "\n### 5.2. 해결 과정 및 결과",
-        "1. **패키지 설치:** Python 환경(`requirements.txt`)에 `cryptography` 패키지 추가 및 설치.",
-        "2. **재시험 결과:** `sha2_user`가 MySQL 8.0 및 8.4 모두에서 **정상 접속 성공** 확인.",
-        "\n### 5.3. 사용자 관점의 영향도 검토",
-        "> [!IMPORTANT]",
-        "> **MySQL 8.4 업그레이드 시 주의 사항**",
-        "> 1. **클라이언트 라이브러리 의존성:** Python 등 클라이언트 환경에서 `caching_sha2_password`를 지원하기 위한 추가 라이브러리(예: `cryptography`)가 필요할 수 있습니다.",
-        "> 2. **Native Password 지원 중단:** MySQL 8.4에서는 `mysql_native_password` 플러그인이 기본적으로 비활성화되어 있습니다. 기존 `native_user` 방식의 계정은 접속이 실패하므로, `caching_sha2_password`로의 전환이 권장됩니다.",
-    ])
+        report_lines.append("</details>")
 
     # --- Write File ---
     with open(report_path, 'w') as f:
