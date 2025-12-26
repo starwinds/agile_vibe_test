@@ -1,4 +1,11 @@
+# IDE & System files
+.swp
+.idea/
+.vscode/
+
+# Test results
+test_results/
+
+# Python cache
 __pycache__/
-*.pyc
-test_results.json
-.venv/
+.pytest_cache/
