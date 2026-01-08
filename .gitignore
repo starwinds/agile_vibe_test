@@ -26,3 +26,10 @@ test_results.json
 **/test_results.json
 variable_comparison.json
 **/variable_comparison.json
+
+# Logs
+*.log
+
+# Virtual Environments (generic)
+venv/
+**/venv/

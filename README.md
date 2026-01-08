@@ -26,6 +26,7 @@
 -   `valkey-ha-and-cluster/`: **Valkey의 고가용성(HA) 및 클러스터 모드**를 테스트하고 구현하는 프로젝트입니다.
 -   `valkey-vector-benchmark/`: **VectorDBBench**를 확장하여 Valkey Vector Search 성능을 벤치마킹하는 프로젝트입니다. Standalone, HA, Cluster 모드를 모두 지원하며, 최근 클러스터 모드 벤치마크 설정이 개선되었습니다. ([가이드 보기](valkey-vector-benchmark/docs/manual_benchmark_guide.md))
 -   `valkey-vector-search-test/`: Valkey의 벡터 검색 기능을 검증하는 간단한 테스트 프로젝트입니다.
+-   `usecase_rag_highperf/`: **High Performance RAG** 시스템 구현체로, PostgreSQL과 Valkey를 활용하여 고성능 검색 및 응답 생성을 목표로 합니다.
 -   `mysql-versionup-test/`: **MySQL 버전 간 호환성 및 성능 차이**를 자동으로 검증하는 프로젝트입니다.
     -   **듀얼 환경 구성:** Docker Compose를 사용하여 MySQL 8.0.42와 8.4.7(LTS) 환경을 동시에 구축하고 관리합니다.
     -   **자동화된 테스트 (`pytest`):** Python 기반의 테스트 프레임워크를 통해 두 버전 간의 차이점을 정량적/정성적으로 비교합니다.
