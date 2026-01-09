@@ -10,6 +10,7 @@
 ## 2. 사전 준비
 *   Docker & Docker Compose
 *   Python 3.10+
+*   Ollama (Local) - `nomic-embed-text` 모델 필요 (`ollama pull nomic-embed-text`)
 
 ## 3. 시작하기
 
@@ -18,6 +19,7 @@
 cd usecase_rag_highperf
 cp .env.example .env
 # .env 파일 내의 접속 정보 확인 및 수정
+# OLLAMA_BASE_URL (기본: http://localhost:11434) 설정
 ```
 
 ### 3.2 인프라 구동
