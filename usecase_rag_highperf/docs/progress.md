@@ -12,9 +12,20 @@
 | APP-003 | Indexer 서비스 구현 | ✅ | 3개 청크 색인 완료 |
 | APP-004 | Query 서비스 구현 | 🏃 | 최종 검증 대기 중 |
 | APP-005 | Healthcheck 구현 | ✅ | 정상 동작 확인 |
-| VER-001 | End-to-End 테스트 | 🏃 | Query 결과 확인 필요 |
+| VER-001 | End-to-End 테스트 | ✅ | Query 결과 확인 완료 (Ollama 연동) |
 | VER-002 | README 작성 | ✅ | README.md 생성 완료 |
+
+## Sprint 2: Ollama 연동 (완료)
+
+| ID | Task | Status | Note |
+|:---|:---|:---:|:---|
+| INFRA-003 | Ollama 환경 변수 추가 | ✅ | .env.example 업데이트 |
+| APP-006 | Ollama 임베딩 연동 | ✅ | common.py 수정 (Stub -> Ollama) |
+| TEST-001 | 단위 테스트 추가 | ✅ | tests/test_common.py, tests/test_indexer.py |
+| DOC-001 | 수동 테스트 가이드 | ✅ | manual_test_guide.md 작성 |
+| FIX-001 | 인덱스 차원 자동 갱신 버그 수정 | ✅ | FT.INFO 'dimensions' 키 처리 |
 
 ## 이슈 및 특이사항
 *   Indexer가 백그라운드 실행 시 로그 출력이 지연되는 현상이 있었으나, 사용자가 직접 실행하여 3개 청크 색인 성공 확인.
 *   현재 Valkey와 Postgres 간 데이터 동기화 완료 상태.
+*   Sprint 2에서 Ollama(nomic-embed-text) 연동 완료 및 인덱스 768차원 자동 변환 기능 안정화.
