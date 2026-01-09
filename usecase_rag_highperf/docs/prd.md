@@ -51,6 +51,7 @@ usecase_rag_highperf/
 ### 4.2 환경 변수 (`.env`)
 *   Postgres 접속 정보 (User, Password, DB, Port, DSN)
 *   Valkey 접속 정보 (Host, Port, Password)
+*   **Ollama 설정**: `OLLAMA_BASE_URL` (기본값: `http://localhost:11434`), `OLLAMA_MODEL` (기본값: `nomic-embed-text`)
 
 ### 4.3 데이터베이스 스키마 (`postgres/`)
 *   **Extensions**: `vector` 확장 설치
@@ -61,7 +62,10 @@ usecase_rag_highperf/
     *   `outbox_events`: 데이터 변경 이벤트 저장 (Transactional Outbox 패턴 적용)
 
 ### 4.4 애플리케이션 로직 (`app/`)
-*   **`common.py`**: 임베딩 차원 정의 및 Stub 임베딩 생성 함수, 바이너리 패킹 함수 제공.
+*   **`common.py`**:
+    *   임베딩 차원 정의: `768` (nomic-embed-text 기준)
+    *   임베딩 생성 함수: `OLLAMA_BASE_URL`의 `/api/embeddings` 엔드포인트를 호출하여 실제 임베딩 생성 (Stub 대체)
+    *   바이너리 패킹 함수 제공
 *   **`ingest.py`**:
     *   텍스트 청킹 및 해시 생성
     *   Postgres 트랜잭션 내에서 문서, 청크, ACL 저장 및 Outbox 이벤트 생성 (`CHUNK_UPSERT`)

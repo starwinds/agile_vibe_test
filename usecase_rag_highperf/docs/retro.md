@@ -19,7 +19,10 @@
 *   **하드코딩된 설정**: 일부 설정값이나 쿼리 파라미터가 코드 내에 하드코딩되어 있어 유연성이 떨어질 수 있음.
 
 ## 4. 향후 계획 (Action Items)
-1.  **실제 임베딩 모델 연동**: OpenAI API 또는 HuggingFace 로컬 모델을 연동하여 `embed_text_stub` 대체.
+1.  **실제 임베딩 모델 연동 (Ollama)**:
+    *   현재 구축된 **Ollama** 환경을 활용하여 `embed_text_stub`를 대체.
+    *   보유 모델(`gemma:2b`, `codellama:7b` 등)은 LLM이므로, RAG 성능 최적화를 위해 **전용 임베딩 모델**(예: `nomic-embed-text` 또는 `mxbai-embed-large`)을 `ollama pull`로 확보하여 사용하는 것을 권장.
+    *   `common.py`의 임베딩 차원(`EMBED_DIM`)을 해당 모델에 맞게 수정 필요 (예: 384 -> 768 or 1024).
 2.  **고급 청킹 도입**: LangChain 등의 라이브러리를 활용하거나 커스텀 로직을 개선하여 의미 단위 청킹 구현.
 3.  **Indexer 안정성 강화**: 예외 발생 시 재시도 로직 추가 및 실패 로그 기록 강화.
 4.  **API 서버화**: 현재 CLI 형태의 실행 방식을 FastAPI 등을 활용한 REST API 서버로 전환하여 외부 연동성 확보.

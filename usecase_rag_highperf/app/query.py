@@ -4,7 +4,7 @@ import redis
 import numpy as np
 from typing import List, Dict
 from dotenv import load_dotenv
-from common import embed_text_stub, pack_f32
+from common import embed_text, pack_f32
 
 load_dotenv()
 
@@ -34,7 +34,7 @@ def search(query_text: str, tenant_id: str, principal: str, top_k: int = 5):
     3. Filter results by ACL in Postgres.
     """
     # 1. Embed
-    query_vector = embed_text_stub(query_text)
+    query_vector = embed_text(query_text)
     query_bytes = pack_f32(query_vector)
     
     # 2. Valkey Search

@@ -2,3 +2,4 @@ psycopg[binary]
 redis
 numpy
 python-dotenv
+requests

@@ -4,7 +4,7 @@ import time
 import redis
 import psycopg
 from dotenv import load_dotenv
-from common import embed_text_stub, pack_f32, EMBEDDING_DIM
+from common import embed_text, pack_f32, EMBEDDING_DIM
 
 load_dotenv()
 
@@ -18,10 +18,40 @@ r = redis.Redis(
 
 INDEX_NAME = "idx:chunks"
 
+def find_dim(info):
+    """
+    Recursively find the value associated with 'DIM' in the nested list/dict structure.
+    """
+    if isinstance(info, list):
+        for i, item in enumerate(info):
+            if item == b'DIM' or item == 'DIM':
+                if i + 1 < len(info):
+                    try:
+                        return int(info[i+1])
+                    except (ValueError, TypeError):
+                        pass
+            res = find_dim(item)
+            if res is not None:
+                return res
+    return None
+
 def create_index():
     try:
-        r.execute_command("FT.INFO", INDEX_NAME)
-        print("Index already exists.")
+        info = r.execute_command("FT.INFO", INDEX_NAME)
+        existing_dim = find_dim(info)
+        
+        if existing_dim is not None and existing_dim != EMBEDDING_DIM:
+            print(f"Index exists with DIM {existing_dim}, expected {EMBEDDING_DIM}. Dropping index...")
+            r.execute_command("FT.DROPINDEX", INDEX_NAME)
+            # Force raise to trigger creation block below
+            raise redis.exceptions.ResponseError("Recreating")
+        elif existing_dim is not None:
+            print(f"Index exists with correct DIM {existing_dim}.")
+            return
+        else:
+            print("Index exists but DIM not found. Assuming compatible.")
+            return
+
     except redis.exceptions.ResponseError:
         print("Creating index...")
         # Schema: chunk_id (TAG), doc_id (TAG), tenant_id (TAG), vector (VECTOR)
@@ -82,7 +112,7 @@ def process_events():
                         tenant_id = data["tenant_id"]
                         
                         # Generate Embedding
-                        vector = embed_text_stub(chunk_text)
+                        vector = embed_text(chunk_text)
                         vector_bytes = pack_f32(vector)
                         
                         # Index to Valkey
