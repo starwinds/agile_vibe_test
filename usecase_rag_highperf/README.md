@@ -57,7 +57,16 @@ python app/indexer.py
 python app/query.py
 ```
 
+### 3.4 Ollama 상태 점검
+최근 업데이트된 `app/check_ollama.py` 스크립트를 통해 Ollama 서비스와 `nomic-embed-text` 모델 존재 여부를 확인할 수 있습니다.
+```bash
+python app/check_ollama.py
+```
+
 ## 5. 프로젝트 구조
 *   `app/`: Python 애플리케이션 소스 코드
+    *   `check_ollama.py`: Ollama 연동 확인 유틸리티
+*   `docs/`: 문서 및 분석 결과
+    *   `retro2.md`: Sprint 2(Ollama 연동) 회고록
 *   `postgres/`: DB 스키마 및 초기화 스크립트
 *   `docker-compose.yml`: 인프라 설정 파일
