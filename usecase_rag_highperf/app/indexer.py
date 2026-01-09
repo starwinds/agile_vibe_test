@@ -20,11 +20,12 @@ INDEX_NAME = "idx:chunks"
 
 def find_dim(info):
     """
-    Recursively find the value associated with 'DIM' in the nested list/dict structure.
+    Recursively find the value associated with 'DIM' or 'dimensions' in the nested list/dict structure.
     """
     if isinstance(info, list):
         for i, item in enumerate(info):
-            if item == b'DIM' or item == 'DIM':
+            # Check for DIM or dimensions (bytes or str)
+            if item in (b'DIM', 'DIM', b'dimensions', 'dimensions'):
                 if i + 1 < len(info):
                     try:
                         return int(info[i+1])
