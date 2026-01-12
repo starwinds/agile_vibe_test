@@ -9,6 +9,30 @@ def load_json(filename):
             return json.load(f)
     return None
 
+# Filter lists
+IGNORED_KEYS = {
+    'hostname', 'server_uuid', 'build_id', 'version_comment', 'version_compile_machine', 
+    'version_compile_os', 'version_compile_zlib', 'pseudo_thread_id', 
+    'gtid_executed', 'gtid_purged',
+    'group_replication_group_name', 'group_replication_local_address', 
+    'group_replication_group_seeds', 'group_replication_view_change_uuid',
+    'caching_sha2_password_digest_rounds' # Usually same, but if differs, obscure
+}
+
+IGNORED_SUFFIXES = (
+    '_file', '_dir', '_path', '_socket', '_basename', '_index'
+)
+
+def should_ignore(key):
+    if key in IGNORED_KEYS:
+        return True
+    if key.endswith(IGNORED_SUFFIXES):
+        # Exception: innodb_data_file_path is a config string (e.g. ibdata1:12M:autoextend), not just a path
+        if key == 'innodb_data_file_path': 
+            return False 
+        return True
+    return False
+
 def generate_new_report():
     standalone_data = load_json('variable_comparison.json')
     cluster_data = load_json('cluster_variable_comparison.json')
@@ -21,6 +45,7 @@ def generate_new_report():
         f"> **보고서 생성일:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         "\n## 1. 개요",
         "본 리포트는 Standalone 환경과 InnoDB Cluster 환경에서의 MySQL 8.0.42와 8.4.7 버전 간 차이점을 통합 분석한 결과입니다.",
+        "\n> **참고:** 파일 경로, 호스트명, UUID, 빌드 정보 등 환경 종속적이거나 매 실행마다 달라지는 변수는 제외되었습니다."
     ]
     
     # Check if data exists
@@ -40,6 +65,9 @@ def generate_new_report():
         all_diff_keys = set(s_diff.keys()) | set(c_diff.keys())
         
         for key in all_diff_keys:
+            if should_ignore(key):
+                continue
+
             in_s = key in s_diff
             in_c = key in c_diff
             
