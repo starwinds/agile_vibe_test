@@ -12,15 +12,17 @@ MySQL 8.4는 혁신 릴리스(Innovation Release) 이후의 첫 번째 LTS 버�
 mysql-versionup-test/
 ├── docs/                   # 프로젝트 문서 (PRD, 백로그, 리포트, 회고 등)
 ├── mysql-compare/          # 인프라 구성
-│   ├── docker-compose.yml  # MySQL 8.0 & 8.4 컨테이너 정의
-│   ├── mysql80/            # 8.0용 설정 (my.cnf, init.sql)
-│   └── mysql84/            # 8.4용 설정 (my.cnf, init.sql)
+│   ├── docker-compose.yml         # Standalone MySQL 정의
+│   ├── docker-compose.cluster.yml # InnoDB Cluster (3-node) 정의
+│   ├── mysql80/                   # 8.0용 설정
+│   └── mysql84/                   # 8.4용 설정
 └── python/                 # 테스트 자동화 스크립트
     ├── tests/              # pytest 기반 테스트 케이스
     ├── common_db.py        # DB 연결 및 유틸리티
-    ├── run_tests.py        # 전체 테스트 실행기 (pytest 오케스트레이터)
-    ├── compare_variables.py # 시스템 변수 전수 비교 및 데이터 추출 도구
-    └── generate_report.py  # 결과 리포트 생성기
+    ├── run_tests.py        # 전체 테스트 실행기
+    ├── compare_variables.py # Standalone 변수 비교 도구
+    ├── generate_new_report.py # 통합 리포트 생성기 (Standalone + Cluster)
+    └── generate_report.py  # 기존 Standalone 리포트 생성기
 ```
 
 ## 🧪 주요 테스트 항목
@@ -38,47 +40,36 @@ mysql-versionup-test/
     - 600여 개의 시스템 변수 전수 비교 (기본값 변경, 추가/삭제 항목 식별)
 5.  **성능 경향 (Performance)**
     - 버전 간 Insert TPS 및 Select Latency 상대적 비교
+6.  **InnoDB Cluster 비교**
+    - Cluster 환경에서의 Primary 노드 설정 차이 식별 (Version-driven vs Cluster-driven)
 
 ## 🛠️ 실행 방법
 
-상세한 실행 가이드는 **[전체 테스트 수동 가이드](./docs/manual_test_guide.md)**를 참조하십시오.
+상세한 실행 가이드는 아래 문서를 참조하십시오.
+- **[Standalone 테스트 가이드](./docs/manual_test_guide.md)**
+- **[InnoDB Cluster 테스트 가이드](./docs/manual_test_cluster_guide.md)**
 
-### 1. 데이터베이스 환경 구축
+### 테스트 실행 및 통합 리포트 생성
 ```bash
-cd mysql-compare
-docker-compose up -d
-```
-
-### 2. Python 환경 설정
-```bash
-cd python
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-### 3. 테스트 실행 및 리포트 생성
-```bash
-# 1. 전체 테스트 실행 (pytest 기반)
-python run_tests.py
-
-# 2. 시스템 변수 전수 비교 및 데이터 추출
-# (generate_report.py 실행을 위한 필수 단계)
+# 1. Standalone 변수 수집
 python compare_variables.py
 
-# 3. 마크다운 리포트 생성
-python generate_report.py
+# 2. Cluster 변수 수집 (Cluster 환경 구동 후)
+pytest tests/test_cluster_variables.py
+
+# 3. 통합 마크다운 리포트 생성
+python generate_new_report.py
 ```
 
 ## 📊 테스트 결과 확인
 
 테스트가 완료되면 아래 파일들을 통해 상세 결과를 확인할 수 있습니다.
-- **최종 요약 보고서:** [docs/mysql_version_diff_test_report.md](./docs/mysql_version_diff_test_report.md)
-- **전체 결과 데이터:** `python/test_results.json`
-- **시스템 변수 비교 데이터:** `python/variable_comparison.json`
+- **통합 요약 보고서 (권장):** [docs/mysql_version_diff_test_new_report.md](./docs/mysql_version_diff_test_new_report.md)
+- **Standalone 보고서:** [docs/mysql_version_diff_test_report.md](./docs/mysql_version_diff_test_report.md)
 
 ## 📝 프로젝트 현황
 
 - **Sprint 1:** 인프라 구축, 인증 및 기본 스키마 테스트 완료
 - **Sprint 2:** 시스템 스키마 및 전체 변수 비교, 리포트 자동화 완료
+- **Sprint 3:** InnoDB Cluster 비교 및 통합 리포트(Version/Cluster 분류) 구현 완료
 - **최종 회고:** [docs/retro2.md](./docs/retro2.md)
