@@ -1,12 +1,13 @@
 # PRD: MySQL 8.0 vs 8.4 버전 비교 테스트 자동화
 
 ## 1. 개요 (Overview)
-본 문서는 MySQL 8.0.42와 8.4.7 버전 간의 주요 차이점을 검증하기 위한 테스트베드 구축 및 자동화 프로젝트의 요구사항을 정의합니다. Docker Compose를 사용하여 두 버전의 MySQL 환경을 구성하고, Python과 pytest를 이용해 기능, 동작, 기본 파라미터의 차이를 비교 분석하는 테스트 스크립트를 개발합니다.
+본 문서는 MySQL 8.0.42와 8.4.7 버전 간의 주요 차이점을 검증하기 위한 테스트베드 구축 및 자동화 프로젝트의 요구사항을 정의합니다. Docker Compose를 사용하여 두 버전의 MySQL 환경(Standalone 및 InnoDB Cluster)을 구성하고, Python과 pytest를 이용해 기능, 동작, 기본 파라미터의 차이를 비교 분석하는 테스트 스크립트를 개발합니다.
 
 ## 2. 목표 (Goals)
 - **정확한 차이점 식별:** MySQL 8.0.42와 8.4.7 간의 스키마(DDL), 인증, 기본 파라미터, 성능 등 주요 항목의 차이점을 실제 테스트를 통해 명확히 식별하고 문서화합니다.
 - **자동화된 검증 환경 구축:** 향후 다른 MySQL 버전 비교에도 재사용할 수 있는 자동화된 테스트 환경을 구축하여 반복적인 검증 작업을 효율화합니다.
 - **기술적 의사결정 지원:** DBaaS(Database as a Service) 팀이 차기 MySQL 버전으로의 업그레이드 여부를 결정하는 데 필요한 구체적이고 신뢰성 있는 기술 검토 자료를 제공합니다.
+- **Cluster 환경 검증:** InnoDB Cluster 구성 시 Primary 노드의 설정 변화를 파악하여 DBaaS 환경에서의 운영 안정성을 확보합니다.
 
 ## 3. 사용자 (Users)
 - **DBaaS 제공팀 엔지니어:** MySQL 업그레이드에 따른 기술적 영향을 분석하고 사전 검증을 수행하는 담당자.
@@ -20,12 +21,15 @@
   - 엔지니어는 FK 제약 조건, 인증 플러그인 등 특정 기능의 버전 간 동작 차이가 궁금할 때, 관련 테스트 코드(`test_fk.py`, `test_auth.py` 등)를 직접 실행하거나 수정하여 차이점을 재현하고 심층 분석합니다.
 - **시나리오 3: 테스트 결과 기반 업그레이드 영향 분석**
   - 기술 의사결정권자는 자동 생성된 `mysql_version_diff_test_report.md` 요약 보고서를 통해 버전 간 주요 차이점과 운영 환경에 미칠 수 있는 영향을 한눈에 파악하고, 이를 업그레이드 계획 수립의 근거 자료로 활용합니다.
+- **시나리오 4: InnoDB Cluster 환경 비교**
+  - 엔지니어는 InnoDB Cluster 환경을 자동으로 구성하고, Primary 노드의 Global Variables를 비교하여 클러스터 환경에서만 발생하는 파라미터 차이(Cluster-driven Diff)를 식별합니다.
 
 ## 5. 기능 요구사항 (Functional Requirements)
 ### 5.1. 테스트 실행 환경
 - **FR-1:** Docker Compose를 사용하여 MySQL 8.0.42와 8.4.7 컨테이너를 동시에 실행할 수 있어야 합니다.
 - **FR-2:** 각 MySQL 인스턴스는 서로 다른 포트로 서비스되어야 하며, 외부에서 접근 가능해야 합니다.
 - **FR-3:** 각 버전별로 독립적인 설정 파일(`my.cnf`)과 초기화 스크립트(`init.sql`)를 사용하여 환경을 구성할 수 있어야 합니다.
+- **FR-3-1 (Cluster 구성):** Docker Compose를 사용하여 MySQL 8.0.42와 8.4.7 각각에 대해 3-node InnoDB Cluster(Primary 1 + Secondary 2) 및 MySQL Router 환경을 구성할 수 있어야 합니다.
 
 ### 5.2. 비교 테스트 스크립트
 - **FR-4 (스키마/DDL):** Foreign Key 제약 조건, PK 없는 테이블 정책, Collation, 신규 예약어 등 DDL 관련 동작 차이를 검증하는 테스트 케이스를 구현해야 합니다.
@@ -34,12 +38,15 @@
 - **FR-5 (인증):** `mysql_native_password`와 `caching_sha2_password` 인증 플러그인 기반 계정의 접속 가능 여부를 버전별로 테스트해야 합니다.
 - **FR-6 (기본 파라미터):** `binlog_expire_logs_seconds`, `innodb_flush_neighbors` 등 지정된 주요 시스템 변수 값을 두 버전에서 수집하고 비교할 수 있어야 합니다.
 - **FR-6-1 (전체 파라미터):** MySQL **8.0.42**와 **8.4.7** 간의 **전체 시스템 파라미터 차이점**을 확인해야 합니다. **SHOW GLOBAL VARIABLES 결과를 대상으로** 차이점을 확인할 수 있는 **정량적 비교 자료를 생성** 합니다. 
+- **FR-6-2 (Cluster Primary):** InnoDB Cluster 환경에서 Primary 노드를 자동으로 식별하고, 해당 노드의 `SHOW GLOBAL VARIABLES` 결과를 수집하여 버전 간 차이를 비교해야 합니다. (Secondary 노드는 제외) 
 
 - **FR-7 (성능):** 간단한 Insert TPS 및 Select Latency를 측정하여 버전 간 상대적 성능 경향을 비교하는 테스트를 포함해야 합니다.
 
 ### 5.3. 테스트 결과 리포팅
 - **FR-8:** 모든 테스트 결과를 담은 `test_results.json` 파일을 생성해야 합니다. (테스트명, 상태, 에러 정보 등 포함)
 - **FR-9:** 주요 차이점을 표 형태로 요약하고, 실패 케이스 재현 SQL 및 운영 영향도 코멘트를 포함한 `mysql_version_diff_test_report.md` 마크다운 보고서를 생성해야 합니다.
+- **FR-9-1 (Cluster Report):** Cluster 비교 결과를 담은 리포트를 생성하며, Version-driven Diff와 Cluster-driven Diff를 구분하여 기술해야 합니다.
+- **FR-10 (통합 리포트):** Cluster 비교 테스트가 포함된 전체 비교 테스트 결과를 `docs/mysql_version_diff_test_new_report.md` 파일로 생성해야 합니다.
 
 ## 6. 비기능 요구사항 (Non-functional Requirements)
 - **NFR-1 (개발 환경):** Windows + WSL2 (Ubuntu) 환경에서 모든 설정과 테스트가 정상적으로 동작해야 합니다.

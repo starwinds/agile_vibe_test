@@ -1,4 +1,10 @@
 import pytest
+import sys
+import os
+
+# Add parent directory to sys.path to allow importing common_db
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from common_db import get_db_connection, drop_all_tables
 
 @pytest.fixture(scope="class", params=["mysql80", "mysql84"])

@@ -1,0 +1,132 @@
+version: '3.8'
+
+services:
+  # MySQL 8.0 Cluster Nodes
+  mysql80-1:
+    image: mysql:8.0.42
+    container_name: mysql80-1
+    hostname: mysql80-1
+    command: ["mysqld", "--server-id=1", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE", "--default-authentication-plugin=mysql_native_password"]
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "33062:3306"
+    networks:
+      - cluster_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mysql80-2:
+    image: mysql:8.0.42
+    container_name: mysql80-2
+    hostname: mysql80-2
+    command: ["mysqld", "--server-id=2", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE", "--default-authentication-plugin=mysql_native_password"]
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "33063:3306"
+    networks:
+      - cluster_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mysql80-3:
+    image: mysql:8.0.42
+    container_name: mysql80-3
+    hostname: mysql80-3
+    command: ["mysqld", "--server-id=3", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE", "--default-authentication-plugin=mysql_native_password"]
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "33064:3306"
+    networks:
+      - cluster_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MySQL 8.4 Cluster Nodes
+  # Note: mysql_native_password is deprecated in 8.4. We use it here for comparison consistency, 
+  # but in 8.4 we might need to be careful. 
+  # In 8.4, --default-authentication-plugin is deprecated/removed? 
+  # It is --authentication_policy in 8.4? 
+  # Let's try minimal config first. If 8.4 fails with default-auth-plugin, we will remove it.
+  # We will rely on built-in defaults for 8.4 unless necessary.
+  mysql84-1:
+    image: mysql:8.4.7
+    container_name: mysql84-1
+    hostname: mysql84-1
+    command: ["mysqld", "--server-id=11", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE"]
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "33065:3306"
+    networks:
+      - cluster_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mysql84-2:
+    image: mysql:8.4.7
+    container_name: mysql84-2
+    hostname: mysql84-2
+    command: ["mysqld", "--server-id=12", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE"]
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "33066:3306"
+    networks:
+      - cluster_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mysql84-3:
+    image: mysql:8.4.7
+    container_name: mysql84-3
+    hostname: mysql84-3
+    command: ["mysqld", "--server-id=13", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE"]
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "33067:3306"
+    networks:
+      - cluster_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MySQL Shell for Bootstrapping
+  cluster-setup:
+    image: mysql/mysql-shell:8.4.1-1.el9
+    container_name: cluster-setup
+    volumes:
+      - ./cluster_setup.py:/script/cluster_setup.py
+    entrypoint: ["tail", "-f", "/dev/null"]
+    networks:
+      - cluster_net
+
+networks:
+  cluster_net:
+    driver: bridge

@@ -95,3 +95,39 @@
 - [ ] **(Report) Task:** `pytest` 테스트 결과를 `test_results.json` 파일로 저장하는 로직 구현
 - [ ] **(Report) Task:** JSON 결과를 바탕으로 `mysql_version_diff_test_report.md` 마크다운 보고서 자동 생성
 - [ ] **(Report) Task:** 보고서에 버전별 테스트 결과 비교 테이블, 실패 케이스 상세 정보, 운영 영향도 코멘트 포함
+
+### Story 3.2: 통합 리포트 생성
+- **As a** 기술 의사결정권자,
+- **I want to** Standalone 및 InnoDB Cluster 테스트 결과를 모두 포함한 통합 리포트를 통해,
+- **So that** 전체적인 버전 간 차이점과 클러스터 환경에서의 영향도를 한 번에 파악할 수 있다.
+
+#### Tasks
+- [ ] **(Report) Task:** `mysql_version_diff_test_new_report.md` 파일 생성 로직 구현
+- [ ] **(Report) Task:** Standalone 테스트 결과와 Cluster 비교 결과를 통합하여 기술
+- [ ] **(Report) Task:** Version-driven Diff와 Cluster-driven Diff를 명확히 구분하여 표시
+
+---
+
+## Epic 4: InnoDB Cluster 비교 테스트
+> **Goal:** InnoDB Cluster 환경에서 Primary 노드의 설정을 비교하여 클러스터 환경 특화된 차이점을 식별합니다.
+
+### Story 4.1: InnoDB Cluster 환경 구성
+- **As a** DBaaS 엔지니어,
+- **I want to** Docker Compose를 사용하여 3-node InnoDB Cluster와 MySQL Router를 포함한 환경을 자동으로 구성하여,
+- **So that** 복잡한 클러스터 설정 없이도 즉시 비교 테스트를 수행할 수 있다.
+
+#### Tasks
+- [ ] **(Cluster) Task:** MySQL 8.0.42용 3-node Cluster + Router `docker-compose` 구성
+- [ ] **(Cluster) Task:** MySQL 8.4.7용 3-node Cluster + Router `docker-compose` 구성
+- [ ] **(Cluster) Task:** MySQL Shell을 이용한 클러스터 부트스트랩 자동화 스크립트 작성
+
+### Story 4.2: Primary Node Global Variables 비교
+- **As a** DBaaS 엔지니어,
+- **I want to** Primary 노드를 자동으로 식별하고 해당 노드의 Global Variables를 수집/비교하여,
+- **So that** 클러스터 환경에서만 발생하는 파라미터 변경 사항(Cluster-driven Diff)을 파악할 수 있다.
+
+#### Tasks
+- [ ] **(Cluster) Task:** Cluster 상태 조회를 통한 Primary 노드 식별 로직 구현
+- [ ] **(Cluster) Task:** Primary 노드 대상 `SHOW GLOBAL VARIABLES` 수집
+- [ ] **(Cluster) Task:** Version-driven Diff와 Cluster-driven Diff 분류 로직 구현
+
