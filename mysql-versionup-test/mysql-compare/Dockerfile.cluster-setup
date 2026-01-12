@@ -1,0 +1,16 @@
+FROM oraclelinux:9
+
+# Workaround for potential SSL issues and timeouts
+RUN echo "sslverify=0" >> /etc/dnf/dnf.conf && \
+    echo "timeout=300" >> /etc/dnf/dnf.conf && \
+    echo "minrate=1" >> /etc/dnf/dnf.conf
+
+# Install MySQL 8.4 repository
+RUN dnf install -y https://repo.mysql.com/mysql84-community-release-el9-1.noarch.rpm
+
+# Install MySQL Shell
+# Retrying might help if it fails again, but dnf has built-in retries.
+RUN dnf install -y mysql-shell
+
+# Keep container running
+ENTRYPOINT ["tail", "-f", "/dev/null"]

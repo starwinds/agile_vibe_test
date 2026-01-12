@@ -1,12 +1,11 @@
-version: '3.8'
-
 services:
   # MySQL 8.0 Cluster Nodes
   mysql80-1:
     image: mysql:8.0.42
     container_name: mysql80-1
+    restart: always
     hostname: mysql80-1
-    command: ["mysqld", "--server-id=1", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE", "--default-authentication-plugin=mysql_native_password"]
+    command: ["mysqld", "--server-id=1", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE", "--default-authentication-plugin=mysql_native_password", "--binlog_transaction_dependency_tracking=WRITESET"]
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_ROOT_HOST: '%'
@@ -23,8 +22,9 @@ services:
   mysql80-2:
     image: mysql:8.0.42
     container_name: mysql80-2
+    restart: always
     hostname: mysql80-2
-    command: ["mysqld", "--server-id=2", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE", "--default-authentication-plugin=mysql_native_password"]
+    command: ["mysqld", "--server-id=2", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE", "--default-authentication-plugin=mysql_native_password", "--binlog_transaction_dependency_tracking=WRITESET"]
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_ROOT_HOST: '%'
@@ -41,8 +41,9 @@ services:
   mysql80-3:
     image: mysql:8.0.42
     container_name: mysql80-3
+    restart: always
     hostname: mysql80-3
-    command: ["mysqld", "--server-id=3", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE", "--default-authentication-plugin=mysql_native_password"]
+    command: ["mysqld", "--server-id=3", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE", "--default-authentication-plugin=mysql_native_password", "--binlog_transaction_dependency_tracking=WRITESET"]
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_ROOT_HOST: '%'
@@ -66,6 +67,7 @@ services:
   mysql84-1:
     image: mysql:8.4.7
     container_name: mysql84-1
+    restart: always
     hostname: mysql84-1
     command: ["mysqld", "--server-id=11", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE"]
     environment:
@@ -84,6 +86,7 @@ services:
   mysql84-2:
     image: mysql:8.4.7
     container_name: mysql84-2
+    restart: always
     hostname: mysql84-2
     command: ["mysqld", "--server-id=12", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE"]
     environment:
@@ -102,6 +105,7 @@ services:
   mysql84-3:
     image: mysql:8.4.7
     container_name: mysql84-3
+    restart: always
     hostname: mysql84-3
     command: ["mysqld", "--server-id=13", "--gtid_mode=ON", "--enforce_gtid_consistency=ON", "--binlog_checksum=NONE"]
     environment:
@@ -119,11 +123,18 @@ services:
 
   # MySQL Shell for Bootstrapping
   cluster-setup:
-    image: mysql/mysql-shell:8.4.1-1.el9
+    build:
+      context: .
+      dockerfile: Dockerfile.cluster-setup
     container_name: cluster-setup
     volumes:
       - ./cluster_setup.py:/script/cluster_setup.py
-    entrypoint: ["tail", "-f", "/dev/null"]
+    # entrypoint is defined in Dockerfile, but we can override or leave it. 
+    # Dockerfile has ENTRYPOINT ["tail", ...]. 
+    # docker-compose override entrypoint line is:
+    # entrypoint: ["tail", "-f", "/dev/null"]
+    # We can remove it from here or keep it. Let's keep it to be safe or remove if redundant.
+    # But wait, 'image' key should be removed.
     networks:
       - cluster_net
 

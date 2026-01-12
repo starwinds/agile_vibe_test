@@ -28,7 +28,7 @@ def get_db_connection(version, user=None, password=None, driver='mysql.connector
         
         return conn
     except Exception as e:
-        # print(f"Failed to connect: {e}") # Reduce noise
+        print(f"Failed to connect: {e}") 
         return None
 
 def get_cluster_primary(nodes_list):

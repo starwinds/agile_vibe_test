@@ -43,7 +43,7 @@ def setup_cluster(version, node_names, cluster_name):
             already_member = False
             # Simple check in topology (this is a rough check, status returns a dictionary)
             # We'll just try to add and catch error if it's already there
-            cluster.add_instance(uri_node, {"recoveryMethod": "clone", "memberSslMode": "REQUIRED"}) 
+            cluster.add_instance(uri_node, {"recoveryMethod": "clone"}) 
             # Note: memberSslMode might be needed depending on config, but clone is key.
             print(f"Successfully added {node}.")
         except Exception as e:

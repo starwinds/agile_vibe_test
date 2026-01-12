@@ -1,0 +1,193 @@
+{
+    "timestamp": "now",
+    "summary": {
+        "total_in_80": 705,
+        "total_in_84": 696,
+        "different_values": 38,
+        "only_in_80": 17,
+        "only_in_84": 8
+    },
+    "different_values": {
+        "lc_messages_dir": {
+            "mysql80": "/usr/share/mysql-8.0/",
+            "mysql84": "/usr/share/mysql-8.4/"
+        },
+        "innodb_io_capacity_max": {
+            "mysql80": "2000",
+            "mysql84": "20000"
+        },
+        "slow_query_log_file": {
+            "mysql80": "/var/lib/mysql/mysql80-1-slow.log",
+            "mysql84": "/var/lib/mysql/mysql84-1-slow.log"
+        },
+        "performance_schema_max_rwlock_classes": {
+            "mysql80": "60",
+            "mysql84": "100"
+        },
+        "temptable_use_mmap": {
+            "mysql80": "ON",
+            "mysql84": "OFF"
+        },
+        "innodb_log_buffer_size": {
+            "mysql80": "16777216",
+            "mysql84": "67108864"
+        },
+        "innodb_version": {
+            "mysql80": "8.0.42",
+            "mysql84": "8.4.7"
+        },
+        "hostname": {
+            "mysql80": "mysql80-1",
+            "mysql84": "mysql84-1"
+        },
+        "group_replication_group_name": {
+            "mysql80": "6338999b-ef76-11f0-b7cf-b25fd60fabfe",
+            "mysql84": "7a5c6cbc-ef76-11f0-8bc9-befeb659b4f2"
+        },
+        "build_id": {
+            "mysql80": "cd3aff82d0fd9b8a7b130b0b45cb5fdf7e2f29cf",
+            "mysql84": "dfd0d55f42f50a10cda6fd9baa83690e88c2511a"
+        },
+        "innodb_read_io_threads": {
+            "mysql80": "4",
+            "mysql84": "11"
+        },
+        "general_log_file": {
+            "mysql80": "/var/lib/mysql/mysql80-1.log",
+            "mysql84": "/var/lib/mysql/mysql84-1.log"
+        },
+        "performance_schema_error_size": {
+            "mysql80": "5319",
+            "mysql84": "5550"
+        },
+        "innodb_use_fdatasync": {
+            "mysql80": "OFF",
+            "mysql84": "ON"
+        },
+        "group_replication_consistency": {
+            "mysql80": "EVENTUAL",
+            "mysql84": "BEFORE_ON_PRIMARY_FAILOVER"
+        },
+        "group_replication_group_seeds": {
+            "mysql80": "mysql80-3:3306,mysql80-2:3306",
+            "mysql84": "mysql84-3:3306,mysql84-2:3306"
+        },
+        "performance_schema_max_statement_classes": {
+            "mysql80": "219",
+            "mysql84": "220"
+        },
+        "character_sets_dir": {
+            "mysql80": "/usr/share/mysql-8.0/charsets/",
+            "mysql84": "/usr/share/mysql-8.4/charsets/"
+        },
+        "version": {
+            "mysql80": "8.0.42",
+            "mysql84": "8.4.7"
+        },
+        "host_cache_size": {
+            "mysql80": "279",
+            "mysql84": "0"
+        },
+        "innodb_change_buffering": {
+            "mysql80": "all",
+            "mysql84": "none"
+        },
+        "temptable_max_mmap": {
+            "mysql80": "1073741824",
+            "mysql84": "0"
+        },
+        "relay_log": {
+            "mysql80": "mysql80-1-relay-bin",
+            "mysql84": "mysql84-1-relay-bin"
+        },
+        "group_replication_local_address": {
+            "mysql80": "mysql80-1:3306",
+            "mysql84": "mysql84-1:3306"
+        },
+        "optimizer_switch": {
+            "mysql80": "index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,use_invisible_indexes=off,skip_scan=on,hash_join=on,subquery_to_derived=off,prefer_ordering_index=on,hypergraph_optimizer=off,derived_condition_pushdown=on",
+            "mysql84": "index_merge=on,index_merge_union=on,index_merge_sort_union=on,index_merge_intersection=on,engine_condition_pushdown=on,index_condition_pushdown=on,mrr=on,mrr_cost_based=on,block_nested_loop=on,batched_key_access=off,materialization=on,semijoin=on,loosescan=on,firstmatch=on,duplicateweedout=on,subquery_materialization_cost_based=on,use_index_extensions=on,condition_fanout_filter=on,derived_merge=on,use_invisible_indexes=off,skip_scan=on,hash_join=on,subquery_to_derived=off,prefer_ordering_index=on,hypergraph_optimizer=off,derived_condition_pushdown=on,hash_set_operations=on"
+        },
+        "server_uuid": {
+            "mysql80": "4c6f38a6-ef76-11f0-85f6-b25fd60fabfe",
+            "mysql84": "4c7020bd-ef76-11f0-893e-befeb659b4f2"
+        },
+        "gtid_executed": {
+            "mysql80": "4c6f38a6-ef76-11f0-85f6-b25fd60fabfe:1-9,\n6338999b-ef76-11f0-b7cf-b25fd60fabfe:1-80,\n63389d8a-ef76-11f0-b7cf-b25fd60fabfe:1-5",
+            "mysql84": "4c7020bd-ef76-11f0-893e-befeb659b4f2:1-9,\n7a5c6cbc-ef76-11f0-8bc9-befeb659b4f2:1-80"
+        },
+        "innodb_doublewrite_pages": {
+            "mysql80": "4",
+            "mysql84": "128"
+        },
+        "performance_schema_max_memory_classes": {
+            "mysql80": "450",
+            "mysql84": "470"
+        },
+        "server_id": {
+            "mysql80": "1",
+            "mysql84": "11"
+        },
+        "innodb_io_capacity": {
+            "mysql80": "200",
+            "mysql84": "10000"
+        },
+        "relay_log_basename": {
+            "mysql80": "/var/lib/mysql/mysql80-1-relay-bin",
+            "mysql84": "/var/lib/mysql/mysql84-1-relay-bin"
+        },
+        "group_replication_exit_state_action": {
+            "mysql80": "READ_ONLY",
+            "mysql84": "OFFLINE_MODE"
+        },
+        "group_replication_view_change_uuid": {
+            "mysql80": "63389d8a-ef76-11f0-b7cf-b25fd60fabfe",
+            "mysql84": "AUTOMATIC"
+        },
+        "innodb_adaptive_hash_index": {
+            "mysql80": "ON",
+            "mysql84": "OFF"
+        },
+        "innodb_buffer_pool_in_core_file": {
+            "mysql80": "ON",
+            "mysql84": "OFF"
+        },
+        "innodb_flush_method": {
+            "mysql80": "fsync",
+            "mysql84": "O_DIRECT"
+        },
+        "relay_log_index": {
+            "mysql80": "/var/lib/mysql/mysql80-1-relay-bin.index",
+            "mysql84": "/var/lib/mysql/mysql84-1-relay-bin.index"
+        }
+    },
+    "only_in_80": [
+        "avoid_temporal_upgrade",
+        "binlog_transaction_dependency_tracking",
+        "default_authentication_plugin",
+        "expire_logs_days",
+        "group_replication_ip_whitelist",
+        "group_replication_recovery_complete_at",
+        "have_openssl",
+        "have_ssl",
+        "log_bin_use_v1_row_events",
+        "master_info_repository",
+        "new",
+        "old",
+        "relay_log_info_file",
+        "relay_log_info_repository",
+        "show_old_temporals",
+        "slave_rows_search_algorithms",
+        "transaction_write_set_extraction"
+    ],
+    "only_in_84": [
+        "explain_json_format_version",
+        "group_replication_preemptive_garbage_collection",
+        "group_replication_preemptive_garbage_collection_rows_threshold",
+        "performance_schema_max_meter_classes",
+        "performance_schema_max_metric_classes",
+        "restrict_fk_on_non_standard_key",
+        "set_operations_buffer_size",
+        "tls_certificates_enforced_validation"
+    ]
+}
