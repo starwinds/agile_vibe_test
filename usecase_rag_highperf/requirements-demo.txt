@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+streamlit
+httpx
+redis
+python-dotenv
+# Existing requirements needed for common logic (embedding)
+numpy
+requests
