@@ -100,3 +100,26 @@ python app/generate_queries.py --queries 100
 
 ### 6.4 결과 확인
 벤치마크 결과는 `out/` 디렉토리에 JSON 파일로 저장됩니다.
+
+## 7. Demo App (Sprint 4)
+
+FastAPI 백엔드와 Streamlit 프론트엔드로 구성된 하이브리드 검색 데모입니다.
+
+### 7.1 설치
+```bash
+pip install -r requirements-demo.txt
+```
+
+### 7.2 API 실행 (Backend)
+```bash
+uvicorn usecase_rag_highperf.app.demo_api.main:app --reload --port 8000
+```
+Swagger UI: http://localhost:8000/docs
+
+### 7.3 Streamlit 실행 (Frontend)
+새 터미널에서 실행:
+```bash
+cd usecase_rag_highperf/app/streamlit_app
+streamlit run app.py
+```
+브라우저 접속: http://localhost:8501
