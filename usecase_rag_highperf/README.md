@@ -70,3 +70,33 @@ python app/check_ollama.py
     *   `retro2.md`: Sprint 2(Ollama 연동) 회고록
 *   `postgres/`: DB 스키마 및 초기화 스크립트
 *   `docker-compose.yml`: 인프라 설정 파일
+
+## 6. 성능 벤치마크 (Sprint 3)
+
+대규모 데이터 생성 및 성능 측정을 위한 도구 모음입니다.
+
+### 6.1 데이터 생성
+대량의 문서 및 Outbox 이벤트를 생성합니다.
+```bash
+python app/generate_dataset.py --docs 1000 --avg-chunks 10 --update-rate 0.1
+```
+
+### 6.2 질의 생성
+벤치마크에 사용할 질의 데이터를 생성합니다. (Semantic, Keyword, Freshness 등 다양한 유형)
+```bash
+python app/generate_queries.py --queries 100
+```
+
+### 6.3 벤치마크 실행
+생성된 질의를 사용하여 검색 성능을 측정합니다.
+*   **Vector Search Only (Mock Embedding)**:
+    ```bash
+    python app/bench.py --mode valkey_knn --mock-embedding --concurrency 50
+    ```
+*   **Hybrid Search (Real Embedding + Fetch)**:
+    ```bash
+    python app/bench.py --mode hybrid_fetch --no-mock-embedding
+    ```
+
+### 6.4 결과 확인
+벤치마크 결과는 `out/` 디렉토리에 JSON 파일로 저장됩니다.

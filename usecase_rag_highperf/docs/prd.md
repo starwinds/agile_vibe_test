@@ -99,3 +99,77 @@ usecase_rag_highperf/
 *   Ingest 실행 시 DB에 데이터가 정상적으로 적재되어야 함.
 *   Indexer 실행 시 Valkey에 인덱스가 생성되고 키가 추가되어야 함.
 *   Query 실행 시 검색 결과가 반환되고, ACL이 적용된 본문 텍스트가 출력되어야 함.
+
+## 6. 고도화 요구사항 (Single Tenant Data Query Bench)
+
+기존 `rag-highperf-pg-valkey` 샘플 레포지토리를 확장하여 **High Performance RAG 데모**를 위한 **현실적인 샘플 데이터/쿼리 생성기 + 벤치마크 스크립트**를 추가합니다.
+
+### 6.1 전제 조건
+*   **Single tenant만 고려**: tenant_id는 고정값 `t1`으로 설정하며, 멀티테넌시 로직은 제거합니다.
+*   **ACL 단순화**: 기본적으로 모든 principal이 접근 가능하며, 선택적으로 일부 문서(5% 내외)에 대해서만 `user:alice` 전용 ACL을 적용합니다.
+*   **기존 구조 유지**: Postgres (SoR + outbox), Valkey (VectorSearch serving), indexer(outbox consumer) 구조를 유지합니다.
+
+### 6.2 추가 파일 구조 (`app/`)
+기존 파일은 유지하고 다음 파일들을 추가합니다.
+*   `generate_dataset.py`: 샘플 문서/청크/업데이트/삭제/outbox 생성
+*   `generate_queries.py`: 벤치용 질의 세트 생성 (golden answer 포함)
+*   `bench.py`: 성능 벤치 스크립트
+*   `metrics.py`: latency(p50/p95/p99), QPS 계산 유틸
+
+### 6.3 샘플 데이터 생성기 (`generate_dataset.py`)
+*   **목적**: 검색이 필요해 보이는 규모 있는 corpus 자동 생성 및 문서 변경(업데이트/삭제)을 통한 outbox + indexer 필요성 데모.
+*   **CLI 인터페이스**:
+    ```bash
+    python app/generate_dataset.py --docs 1500 --avg-chunks 12 --update-rate 0.08 --delete-rate 0.02 --seed 42
+    ```
+*   **생성 데이터 요구사항**:
+    *   **문서 도메인 (3종 이상)**: 정책/FAQ, 운영 런북, 기술 문서.
+    *   **문서 특성**: 문서마다 고유 키워드 포함, 비슷한 의미지만 표현이 다른 문장 다수 포함.
+    *   **업데이트/삭제 이벤트**:
+        *   업데이트: `update-rate` 비율, version 증가, 문장 변경, `CHUNK_UPSERT` outbox 이벤트 생성.
+        *   삭제: `delete-rate` 비율, status=deleted, `CHUNK_DELETE` outbox 이벤트 생성.
+    *   **산출물**: Postgres tables (documents, chunks, doc_acl, outbox_events), `data/manifest.json`.
+
+### 6.4 질의 생성기 (`generate_queries.py`)
+*   **목적**: 수백~수천 개 질의 세트 생성 및 질의 유형 혼합을 통한 검색 품질/성능 평가.
+*   **CLI 인터페이스**:
+    ```bash
+    python app/generate_queries.py --queries 800 --mix semantic=0.50 keyword=0.25 hybrid=0.20 freshness=0.05 --seed 42
+    ```
+*   **질의 유형 요구사항**:
+    *   **Semantic (50%)**: 문서 내용을 paraphrase한 자연어 질문.
+    *   **Keyword (25%)**: 에러코드/설정값 직접 질의.
+    *   **Hybrid (20%)**: 키워드 + 자연어 혼합.
+    *   **Freshness (5%)**: 업데이트된 문서의 변경된 내용을 묻는 질문 (기대 결과는 최신 버전).
+*   **출력 포맷**: `data/queries.jsonl` (query_id, tenant_id, principal, query_type, query_text, expected_doc_ids 포함).
+
+### 6.5 벤치 스크립트 (`bench.py`)
+*   **목적**: High performance RAG 데모를 위한 정량 지표 측정 (p99 latency 중심).
+*   **실행 모드**:
+    *   **Mode A (`valkey_knn`)**: Valkey VectorSearch만 수행 (순수 retrieval latency).
+    *   **Mode B (`hybrid_fetch`)**: Valkey Top-K 검색 + Postgres chunk_text fetch (end-to-end latency).
+*   **CLI 인터페이스**:
+    ```bash
+    python app/bench.py --queries data/queries.jsonl --mode hybrid_fetch --k 40 --concurrency 32 --duration-sec 60 --timeout-ms 200 --report out/bench_hybrid_fetch.json
+    ```
+*   **측정 지표**: latency(p50/p95/p99), throughput(QPS), error rate, hit@k.
+*   **부하 방식**: Closed-loop 방식 (worker N개).
+
+### 6.6 Metrics 유틸 (`metrics.py`)
+*   percentile 계산(p50/p95/p99), QPS 계산, bench 결과 dict 반환.
+
+### 6.7 README 보강
+*   데이터 생성, indexer 실행, 질의 생성, 벤치 실행 시나리오 및 데모 포인트 설명 추가.
+
+### 6.8 구현 시 주의사항
+*   외부 데이터/API 사용 금지.
+*   seed 고정 시 재현 가능해야 함.
+*   embedding은 기존 `embed_text_stub()` (또는 설정된 모델) 사용.
+*   코드 가독성 중시.
+
+### 6.9 최종 산출물
+*   확장된 `app/` 코드.
+*   `data/manifest.json`, `data/queries.jsonl`.
+*   `out/bench_*.json` 벤치 결과.
+*   업데이트된 README.md.
+

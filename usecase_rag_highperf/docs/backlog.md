@@ -89,3 +89,32 @@ Python 기반의 RAG 파이프라인 애플리케이션을 개발합니다.
 - [x] **VER-002: README 작성**
     - 프로젝트 설치 및 실행 가이드 (`docker compose`, `venv`, 실행 명령어)
     - 트러블슈팅 가이드
+
+## Epic 5: 고도화 요구사항 (Advanced Requirements)
+Single Tenant 환경에서의 대규모 데이터 처리 및 성능 벤치마크를 위한 도구를 개발합니다.
+
+- [ ] **ADV-001: 데이터 생성기 개발 (Data Generator)**
+    - `app/generate_dataset.py` 구현
+    - Single Tenant(`t1`) 환경을 가정한 대규모 코퍼스 생성
+    - CLI 인자 지원: `--docs`, `--avg-chunks`, `--update-rate`, `--delete-rate`, `--seed`
+    - Postgres 테이블(`documents`, `chunks`, `doc_acl`, `outbox_events`)에 데이터 적재
+    - `data/manifest.json` 생성
+
+- [ ] **ADV-002: 질의 생성기 개발 (Query Generator)**
+    - `app/generate_queries.py` 구현
+    - 벤치마크용 질의 세트 생성
+    - CLI 인자 지원: `--queries`, `--mix` (semantic, keyword, hybrid, freshness 비율), `--seed`
+    - Golden Answer(기대되는 `doc_id` 목록) 포함
+    - `data/queries.jsonl` 파일 생성
+
+- [ ] **ADV-003: 벤치마크 도구 개발 (Benchmark Tool)**
+    - `app/bench.py` 및 `app/metrics.py` 구현
+    - Mode A (`valkey_knn`): Valkey 검색 성능 측정
+    - Mode B (`hybrid_fetch`): Valkey 검색 + Postgres 본문 조회 E2E 성능 측정
+    - CLI 인자 지원: `--queries`, `--mode`, `--k`, `--concurrency`, `--duration-sec`, `--report`
+    - `metrics.py`: Latency(p50, p95, p99), QPS, Error Rate 계산
+
+- [ ] **ADV-004: 문서화 업데이트**
+    - `README.md` 업데이트
+    - 새로운 스크립트(`generate_dataset.py`, `generate_queries.py`, `bench.py`) 사용법 추가
+    - 벤치마크 실행 및 결과 해석 가이드 추가
