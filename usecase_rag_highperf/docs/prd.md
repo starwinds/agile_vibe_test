@@ -173,3 +173,54 @@ usecase_rag_highperf/
 *   `out/bench_*.json` 벤치 결과.
 *   업데이트된 README.md.
 
+
+## 7. Demo App 요구사항 (FastAPI + Streamlit)
+
+기존 벤치마크 시스템에 End-user가 체감할 수 있는 검색 데모 애플리케이션을 추가합니다.
+
+### 7.1 목표
+*   **체감형 데모**: Semantic, Keyword, Hybrid 검색의 차이와 장단점을 UI를 통해 직접 확인.
+*   **설명 가능성(Explainability)**: 검색 결과의 점수 구성(Vector vs BM25)과 매칭된 스니펫을 통해 결과 이유 설명.
+*   **Non-goal**: LLM을 이용한 답변 생성(Generation)은 제외.
+
+### 7.2 아키텍처 및 디렉토리 구조
+*   **`app/demo_api/`**: FastAPI 백엔드
+    *   `main.py`: 엔트리포인트
+    *   `search_valkey.py`: 검색 로직 구현
+    *   `hybrid.py`: Hybrid 검색 (2-pass union + rerank) 구현
+*   **`app/streamlit_app/`**: Streamlit 프론트엔드
+    *   `app.py`: UI 메인
+    *   `ui_presets.py`: 데모용 프리셋 쿼리
+
+### 7.3 기능 요구사항
+
+#### 7.3.1 Demo API (FastAPI)
+*   **엔드포인트**:
+    *   `POST /search/semantic`: Vector 검색 (Valkey KNN)
+    *   `POST /search/keyword`: BM25 검색 (Valkey Text Search)
+    *   `POST /search/hybrid`: Keyword + Vector 검색 후 Reranking
+*   **Hybrid 로직**:
+    1.  Keyword Top-K & Vector Top-K 조회
+    2.  Union 및 중복 제거
+    3.  Score Normalization (Min-Max 등)
+    4.  Weighted Sum (`combined = w_keyword * bm25 + w_vector * vector`)
+    5.  Re-ranking 및 Top-K 반환
+*   **Response**: `rank`, `doc_id`, `snippet`, `scores` (breakdown 포함)
+
+#### 7.3.2 Streamlit UI
+*   **컨트롤 패널**:
+    *   검색 모드 선택 (Semantic / Keyword / Hybrid)
+    *   Top-K 설정
+    *   Hybrid 가중치 슬라이더
+    *   Debug 모드 토글 (점수 상세 표시)
+*   **결과 표시**:
+    *   검색 결과 리스트 (Rank, Title, Snippet, Score)
+    *   Debug ON 시: 매칭된 키워드, 벡터 거리, 점수 계산 내역 표시
+*   **Preset 버튼**:
+    *   Semantic/Keyword/Hybrid 각 강점을 보여주는 예시 쿼리 9종 버튼 제공.
+
+### 7.4 실행 환경
+*   **의존성**: `fastapi`, `uvicorn`, `streamlit`, `httpx` 등 추가 (`requirements-demo.txt`).
+*   **실행**:
+    *   API: `uvicorn app.demo_api.main:app`
+    *   UI: `streamlit run app/streamlit_app/app.py`

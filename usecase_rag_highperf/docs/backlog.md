@@ -118,3 +118,24 @@ Single Tenant 환경에서의 대규모 데이터 처리 및 성능 벤치마크
     - `README.md` 업데이트
     - 새로운 스크립트(`generate_dataset.py`, `generate_queries.py`, `bench.py`) 사용법 추가
     - 벤치마크 실행 및 결과 해석 가이드 추가
+
+## Epic 6: Demo App 개발 (Demo Application)
+End-user가 체감할 수 있는 검색 데모 애플리케이션(FastAPI + Streamlit)을 개발합니다.
+
+- [ ] **DEMO-001: Demo API 프로젝트 구조 및 의존성 구성**
+    - `app/demo_api/` 디렉토리 및 기본 파일(`main.py`, `settings.py`, `clients.py`) 생성
+    - `app/streamlit_app/` 디렉토리 생성
+    - `requirements-demo.txt` 작성 (`fastapi`, `uvicorn`, `streamlit`, `httpx` 등)
+
+- [ ] **DEMO-002: Demo API 구현 (Search Logic)**
+    - `app/demo_api/search_valkey.py`: Semantic(Vector), Keyword(BM25) 검색 구현
+    - `app/demo_api/hybrid.py`: Hybrid 검색 (2-pass union + rerank) 구현
+    - `app/demo_api/main.py`: `/search/semantic`, `/search/keyword`, `/search/hybrid` 엔드포인트 구현
+
+- [ ] **DEMO-003: Streamlit UI 구현 (Search Playground)**
+    - `app/streamlit_app/app.py`: 검색 모드 선택, Top-K 설정, Hybrid 가중치 조절 UI 구현
+    - 검색 결과 리스트 및 Debug 모드(점수 Breakdown) 표시 구현
+    - `app/streamlit_app/ui_presets.py`: 데모용 프리셋 쿼리 9종 버튼 연동
+
+- [ ] **DEMO-004: 문서화 및 가이드**
+    - `README.md`에 Demo App 실행 방법 및 시나리오 추가

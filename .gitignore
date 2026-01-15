@@ -30,6 +30,12 @@ variable_comparison.json
 # Logs
 *.log
 
+# Benchmark and Data
+data/
+**/data/
+out/
+**/out/
+
 # Virtual Environments (generic)
 venv/
 **/venv/
