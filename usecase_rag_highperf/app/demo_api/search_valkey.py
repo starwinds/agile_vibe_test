@@ -113,6 +113,18 @@ async def search_semantic(req: SearchRequest) -> List[SearchResult]:
 
     parsed = parse_redis_response(res, with_scores=False, vector_score_field="vector_score")
     
+    # Explicitly fetch chunk_text for all results to ensure we get content
+    if parsed:
+        keys = [item["key"] for item in parsed]
+        async with r.pipeline() as pipe:
+            for key in keys:
+                pipe.hget(key, "chunk_text")
+            chunks = await pipe.execute()
+        
+        for i, chunk in enumerate(chunks):
+            if chunk:
+                parsed[i]["fields"]["chunk_text"] = chunk.decode("utf-8") if isinstance(chunk, bytes) else chunk
+
     out = []
     for item in parsed:
         dist = item["score"]
@@ -126,7 +138,8 @@ async def search_semantic(req: SearchRequest) -> List[SearchResult]:
         out.append(SearchResult(
             rank=item["rank"],
             doc_id=item["fields"].get("doc_id", "unknown"),
-            snippet=item["fields"].get("chunk_text", ""),
+            snippet=item["fields"].get("chunk_text", "")[:200] + "...",
+            content=item["fields"].get("chunk_text", ""),
             scores={"vector": sim, "distance": dist}
         ))
     return out
@@ -151,12 +164,25 @@ async def search_keyword(req: SearchRequest) -> List[SearchResult]:
         
     parsed = parse_redis_response(res, with_scores=True)
     
+    # Explicitly fetch chunk_text for all results
+    if parsed:
+        keys = [item["key"] for item in parsed]
+        async with r.pipeline() as pipe:
+            for key in keys:
+                pipe.hget(key, "chunk_text")
+            chunks = await pipe.execute()
+        
+        for i, chunk in enumerate(chunks):
+            if chunk:
+                parsed[i]["fields"]["chunk_text"] = chunk.decode("utf-8") if isinstance(chunk, bytes) else chunk
+
     out = []
     for item in parsed:
         out.append(SearchResult(
             rank=item["rank"],
             doc_id=item["fields"].get("doc_id", "unknown"),
-            snippet=item["fields"].get("chunk_text", ""),
+            snippet=item["fields"].get("chunk_text", "")[:200] + "...",
+            content=item["fields"].get("chunk_text", ""),
             scores={"bm25": item["score"]}
         ))
     return out

@@ -27,14 +27,19 @@ pip install -r requirements-demo.txt
 ### Step 2: Backend API 실행
 터미널 1:
 ```bash
+# 패키지 경로 인식을 위해 프로젝트 루트(agile_vibe_test)로 이동하여 실행합니다.
+cd ..
 uvicorn usecase_rag_highperf.app.demo_api.main:app --host 0.0.0.0 --port 8000
 ```
 *   시작 로그에 `Ollama is connected.`가 표시되는지 확인합니다.
 
 ### Step 3: Frontend UI 실행
-터미널 2:
+터미널 2 (새 탭/창):
 ```bash
-cd usecase_rag_highperf/app/streamlit_app
+# 프로젝트 루트 또는 usecase_rag_highperf 디렉토리에서 실행
+cd usecase_rag_highperf
+source .venv/bin/activate
+cd app/streamlit_app
 streamlit run app.py
 ```
 *   브라우저가 자동으로 열리거나 `http://localhost:8501`로 접속합니다.

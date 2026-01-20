@@ -111,6 +111,7 @@ pip install -r requirements-demo.txt
 ```
 
 ### 7.2 API 실행 (Backend)
+프로젝트 루트(`agile_vibe_test`)에서 실행해야 합니다:
 ```bash
 uvicorn usecase_rag_highperf.app.demo_api.main:app --reload --port 8000
 ```

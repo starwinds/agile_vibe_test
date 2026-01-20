@@ -12,6 +12,7 @@ class SearchResult(BaseModel):
     rank: int
     doc_id: str
     snippet: str
+    content: Optional[str] = None
     scores: Dict[str, float] # e.g. {"vector": 0.8, "bm25": 0.5, "final": 0.65}
     # Optional: full metadata if needed
 

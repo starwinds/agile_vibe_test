@@ -60,6 +60,8 @@ usecase_rag_highperf/
     *   `chunks`: 문서 청크 데이터 (chunk_id, doc_id, chunk_text, chunk_hash 등)
     *   `doc_acl`: 문서 접근 제어 목록 (tenant_id, doc_id, principal, permission)
     *   `outbox_events`: 데이터 변경 이벤트 저장 (Transactional Outbox 패턴 적용)
+    *   `chunk_embeddings`: 임베딩 데이터의 Source of Record (Pattern B)
+        *   Columns: `chunk_id`, `doc_id`, `embedding` (vector), `model_name`, `model_version`, `text_hash`, `embedded_at`
 
 ### 4.4 애플리케이션 로직 (`app/`)
 *   **`common.py`**:
@@ -72,13 +74,20 @@ usecase_rag_highperf/
 *   **`indexer.py`**:
     *   Valkey 인덱스(`idx:chunks`) 생성 (존재하지 않을 경우)
     *   Postgres `outbox_events` 폴링 및 처리
-    *   Valkey에 데이터 색인 (HSET) 또는 삭제
+    *   **Pattern B 확장**:
+        *   `CHUNK_UPSERT`: Postgres `chunk_embeddings` 테이블에 임베딩 UPSERT (SoR 저장) 후 Valkey에 색인 (HSET)
+        *   `CHUNK_DELETE`: Postgres `chunk_embeddings` 삭제 및 Valkey 데이터 삭제
     *   처리 완료된 이벤트 마킹
 *   **`query.py`**:
-    *   Valkey `FT.SEARCH`를 이용한 KNN 검색
+    *   **Engine 선택 지원**: `engine` 파라미터 (`valkey`, `pgvector`, `fallback`) 지원
+    *   `valkey`: 기존 Valkey `FT.SEARCH` 이용
+    *   `pgvector`: Postgres `vector` 연산 이용 (Valkey 장애 시 대체 가능)
+    *   `fallback`: Valkey 실패 시 pgvector로 자동 재시도
     *   검색 결과에 대해 Postgres `doc_acl` 테이블을 조회하여 권한 검증
     *   권한이 있는 문서의 청크 본문을 조회하여 컨텍스트 조합
 *   **`healthcheck.py`**: Postgres 및 Valkey 연결 상태, 인덱스 준비 상태 확인
+*   **`rebuild_valkey_from_pg.py`** (New):
+    *   Postgres `chunk_embeddings` 데이터를 기반으로 Valkey 인덱스를 전체 재구축 (Disaster Recovery / Sync 용도)
 
 ## 5. 실행 및 검증 시나리오
 
@@ -99,6 +108,9 @@ usecase_rag_highperf/
 *   Ingest 실행 시 DB에 데이터가 정상적으로 적재되어야 함.
 *   Indexer 실행 시 Valkey에 인덱스가 생성되고 키가 추가되어야 함.
 *   Query 실행 시 검색 결과가 반환되고, ACL이 적용된 본문 텍스트가 출력되어야 함.
+*   **Pattern B 검증**:
+    *   Valkey 중단 시 `engine=fallback`으로 검색 결과 반환 확인.
+    *   Valkey 데이터 삭제 후 `rebuild_valkey_from_pg.py` 실행 시 정상 복구 확인.
 
 ## 6. 고도화 요구사항 (Single Tenant Data Query Bench)
 
@@ -196,7 +208,7 @@ usecase_rag_highperf/
 
 #### 7.3.1 Demo API (FastAPI)
 *   **엔드포인트**:
-    *   `POST /search/semantic`: Vector 검색 (Valkey KNN)
+    *   `POST /search/semantic`: Vector 검색 (Valkey KNN 또는 PGVector) - `engine` 파라미터 추가
     *   `POST /search/keyword`: BM25 검색 (Valkey Text Search)
     *   `POST /search/hybrid`: Keyword + Vector 검색 후 Reranking
 *   **Hybrid 로직**:
@@ -210,12 +222,13 @@ usecase_rag_highperf/
 #### 7.3.2 Streamlit UI
 *   **컨트롤 패널**:
     *   검색 모드 선택 (Semantic / Keyword / Hybrid)
+    *   **Engine 선택**: Valkey (Fast) / PGVector (Baseline) / Fallback (Resilient)
     *   Top-K 설정
     *   Hybrid 가중치 슬라이더
     *   Debug 모드 토글 (점수 상세 표시)
 *   **결과 표시**:
     *   검색 결과 리스트 (Rank, Title, Snippet, Score)
-    *   Debug ON 시: 매칭된 키워드, 벡터 거리, 점수 계산 내역 표시
+    *   Debug ON 시: 매칭된 키워드, 벡터 거리, 점수 계산 내역, **실제 사용된 Engine 및 Fallback 여부** 표시
 *   **Preset 버튼**:
     *   Semantic/Keyword/Hybrid 각 강점을 보여주는 예시 쿼리 9종 버튼 제공.
 

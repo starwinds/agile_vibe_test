@@ -122,6 +122,7 @@ def process_events():
                         r.hset(key, mapping={
                             "doc_id": doc_id,
                             "tenant_id": tenant_id,
+                            "chunk_text": chunk_text,
                             "vector": vector_bytes
                         })
                         print(f"Indexed chunk {chunk_id}")

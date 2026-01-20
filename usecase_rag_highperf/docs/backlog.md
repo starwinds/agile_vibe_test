@@ -139,3 +139,34 @@ End-user가 체감할 수 있는 검색 데모 애플리케이션(FastAPI + Stre
 
 - [ ] **DEMO-004: 문서화 및 가이드**
     - `README.md`에 Demo App 실행 방법 및 시나리오 추가
+
+- [ ] **DEMO-005: 검색 결과 표시 개선 (Search Result Enhancement)**
+    - 검색 결과에 Vector Score, Distance 외에 사용자가 인식할 수 있는 원본 콘텐츠(본문 텍스트 등)를 함께 표시
+    - 필요 시 `SearchResult` 스키마 및 UI 레이아웃 조정
+
+## Epic 7: Pattern B Incremental (Postgres SoR)
+기존 Pattern A(Valkey-centric) 구조 위에 Postgres를 Embedding SoR로 도입하여 안정성을 강화하고, Engine 선택 기능을 추가합니다.
+
+- [ ] **DEMO-006: Backend - Schema Update**
+    - `postgres/01_schema.sql`: `chunk_embeddings` 테이블 추가
+    - Columns: `chunk_id`, `doc_id`, `embedding`, `model_name`, `model_version`, `text_hash`, `embedded_at`
+
+- [ ] **DEMO-007: Backend - Indexer Update**
+    - `app/indexer.py` 수정
+    - `CHUNK_UPSERT`: Postgres `chunk_embeddings`에 UPSERT 후 Valkey HSET
+    - `CHUNK_DELETE`: Postgres `chunk_embeddings` 삭제 후 Valkey DEL
+
+- [ ] **DEMO-008: Backend - Rebuild Tool**
+    - `app/tools/rebuild_valkey_from_pg.py` 구현
+    - Postgres `chunk_embeddings` 조회 -> Valkey 인덱스 초기화 -> 재적재 (Pipeline)
+
+- [ ] **DEMO-009: Demo API - Engine Support**
+    - `app/demo_api/` 수정
+    - `SearchRequest`에 `engine` 파라미터 추가 (`valkey`, `pgvector`, `fallback`)
+    - `search_valkey.py`에 `pgvector` 검색 로직 및 Fallback 로직 추가
+
+- [ ] **DEMO-010: Streamlit UI - Engine Selector**
+    - `app/streamlit_app/app.py` 수정
+    - Sidebar에 Engine 선택(Radio/Select) 추가
+    - Debug 모드 시 실제 사용된 Engine 정보 표시
+

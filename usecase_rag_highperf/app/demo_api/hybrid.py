@@ -80,6 +80,7 @@ async def search_hybrid(req: SearchRequest) -> List[SearchResult]:
             rank=0, # to be assigned
             doc_id=doc_id,
             snippet=base_result.snippet,
+            content=base_result.content,
             scores={
                 "vector": sem_norm.get(doc_id, 0.0), # Store normalized for debug
                 "bm25": key_norm.get(doc_id, 0.0),

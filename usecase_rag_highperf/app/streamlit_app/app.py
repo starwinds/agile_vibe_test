@@ -77,6 +77,8 @@ if st.button("Search", type="primary") or query:
                         with col2:
                             st.markdown(f"**Doc ID:** `{r['doc_id']}`")
                             st.markdown(r['snippet'])
+                            with st.expander("View Content"):
+                                st.text(r.get('content', 'No content available'))
                             
                             if debug_mode:
                                 st.json(r["scores"])
