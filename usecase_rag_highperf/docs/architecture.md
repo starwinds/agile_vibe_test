@@ -13,23 +13,23 @@ graph TD
 
     %% Subgraphs
     subgraph Frontend [Frontend Layer]
-        Streamlit[Streamlit App\n(UI)]
+        Streamlit["Streamlit App\n(UI)"]
     end
 
     subgraph Backend [Backend Application Layer]
-        API[Demo API\n(FastAPI)]
-        Ingest[Ingest Service\n(Data Loader)]
-        Indexer[Indexer Service\n(Async Worker)]
-        Rebuild[Rebuild Tool\n(Disaster Recovery)]
+        API["Demo API\n(FastAPI)"]
+        Ingest["Ingest Service\n(Data Loader)"]
+        Indexer["Indexer Service\n(Async Worker)"]
+        Rebuild["Rebuild Tool\n(Disaster Recovery)"]
     end
 
     subgraph Data [Data Layer]
-        PG[(PostgreSQL\nSource of Record)]
-        Valkey[(Valkey\nVector Store & Cache)]
+        PG[("PostgreSQL\nSource of Record")]
+        Valkey[("Valkey\nVector Store & Cache")]
     end
 
     subgraph AI [AI Services]
-        Ollama[Ollama\n(Embedding Model)]
+        Ollama["Ollama\n(Embedding Model)"]
     end
 
     %% Interactions
@@ -37,22 +37,22 @@ graph TD
     Streamlit -->|HTTP REST| API
 
     %% Search Flow
-    API -->|1. Embed Query| Ollama
-    API -->|2. Vector/Keyword Search| Valkey
-    API -.->|3. Fallback / Hybrid| PG
+    API -->|"1. Embed Query"| Ollama
+    API -->|"2. Vector/Keyword Search"| Valkey
+    API -.->|"3. Fallback / Hybrid"| PG
 
     %% Ingest Flow
-    Ingest -->|Write Documents & Events| PG
+    Ingest -->|"Write Documents & Events"| PG
 
     %% Indexing Flow
-    Indexer -->|Poll Outbox Events| PG
-    Indexer -->|Generate Embedding| Ollama
-    Indexer -->|Update Index| Valkey
-    Indexer -->|Persist Embedding (Pattern B)| PG
+    Indexer -->|"Poll Outbox Events"| PG
+    Indexer -->|"Generate Embedding"| Ollama
+    Indexer -->|"Update Index"| Valkey
+    Indexer -->|"Persist Embedding (Pattern B)"| PG
 
     %% Recovery Flow
-    Rebuild -.->|Read All Embeddings| PG
-    Rebuild -.->|Re-index| Valkey
+    Rebuild -.->|"Read All Embeddings"| PG
+    Rebuild -.->|"Re-index"| Valkey
 
     %% Styling
     classDef storage fill:#eee,stroke:#333,stroke-width:2px;
