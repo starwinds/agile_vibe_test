@@ -46,19 +46,36 @@ with st.sidebar:
 if "query_input_widget" not in st.session_state:
     st.session_state.query_input_widget = ""
 
+def apply_preset(query_text):
+    st.session_state.query_input_widget = query_text
+    st.session_state.trigger_search = True
+
 # Presets
 st.subheader("Presets")
 cols = st.columns(3)
 for i, preset in enumerate(PRESETS):
     with cols[i % 3]:
-        if st.button(f"{preset['label']}", help=preset['query'], use_container_width=True):
-            st.session_state.query_input_widget = preset['query']
-            st.rerun()
+        st.button(
+            f"{preset['label']}", 
+            help=preset['query'], 
+            use_container_width=True,
+            on_click=apply_preset,
+            args=(preset['query'], )
+        )
 
 # Search Input
-query = st.text_input("Enter your query:", key="query_input_widget")
+with st.form("search_form"):
+    query = st.text_input("Enter your query:", key="query_input_widget")
+    submitted = st.form_submit_button("Search", type="primary")
 
-if st.button("Search", type="primary") or query:
+# Check trigger from presets or form submission
+trigger_search = st.session_state.get("trigger_search", False)
+if trigger_search:
+    st.session_state.trigger_search = False
+
+should_search = submitted or trigger_search
+
+if should_search:
     if not query:
         st.warning("Please enter a query.")
     else:

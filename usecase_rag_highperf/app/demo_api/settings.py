@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     VALKEY_PASSWORD: str = "valkey"
     VALKEY_INDEX: str = "idx:chunks"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "nomic-embed-text"
+    OLLAMA_MODEL: str = "mxbai-embed-large"
     
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: str = "5432"

@@ -10,7 +10,7 @@
 ## 2. 사전 준비
 *   Docker & Docker Compose
 *   Python 3.10+
-*   Ollama (Local) - `nomic-embed-text` 모델 필요 (`ollama pull nomic-embed-text`)
+*   Ollama (Local) - `mxbai-embed-large` 모델 필요 (`ollama pull mxbai-embed-large`)
 
 ## 3. 시작하기
 
@@ -58,7 +58,7 @@ python app/query.py
 ```
 
 ### 3.4 Ollama 상태 점검
-최근 업데이트된 `app/check_ollama.py` 스크립트를 통해 Ollama 서비스와 `nomic-embed-text` 모델 존재 여부를 확인할 수 있습니다.
+최근 업데이트된 `app/check_ollama.py` 스크립트를 통해 Ollama 서비스와 `mxbai-embed-large` 모델 존재 여부를 확인할 수 있습니다.
 ```bash
 python app/check_ollama.py
 ```

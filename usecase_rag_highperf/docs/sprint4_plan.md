@@ -26,6 +26,7 @@
 | **ADV-009** | **데이터 샘플링 및 전처리** | 로드된 데이터셋에서 실제 문서 추출 및 클리닝 로직 구현. | 1.0 day | TBD |
 | **ADV-010** | **데이터 생성기 고도화** | `generate_dataset.py`를 실제 데이터셋 기반으로 수정. | 1.0 day | TBD |
 | **ADV-011** | **데이터 품질 및 성능 검증** | 생성된 데이터의 품질 및 대량 생성 시 성능 최적화. | 0.5 day | TBD |
+| **ADV-012** | **한국어 데이터 생성 지원** | `generate_dataset.py`에 한국어 위키백과 및 Faker 적용. | 0.5 day | TBD |
 
 ## 3. 상세 계획 (Detailed Plan)
 
@@ -148,6 +149,16 @@
     3.  **Preprocessing**: 빈 줄 제거, 최소 길이 미만 문서 필터링, 특수 문자 정제.
     4.  **Integration**: `generate_dataset.py` 내의 `fake.paragraph()` 호출부를 로드된 실제 데이터셋의 샘플 추출 로직으로 교체.
     5.  **Performance**: 대량 데이터 생성 시 `itertools.islice` 등을 활용하여 메모리 효율성 확보.
+
+### 3.12 한국어 데이터 생성 지원 (Korean Data Support)
+*   **Task ID**: ADV-012
+*   **Files**: `app/generate_dataset.py`
+*   **Implementation Details**:
+    *   **Arguments**: `--language` (default: `en`, choices: `en`, `ko`) 추가.
+    *   **Logic**:
+        *   `en`: 기존 `wikitext` 사용.
+        *   `ko`: `beomi/kowiki-20240401` (split=`train`) 로드.
+        *   **Fallback**: `Faker` 초기화 시 `locale` 설정 (`en_US` vs `ko_KR`).
 
 ## 4. 검증 계획 (Verification Plan)
 *   **Prerequisite**: `source .venv/bin/activate` (기존 venv 활용)

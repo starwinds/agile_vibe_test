@@ -38,28 +38,57 @@ class RealTextGenerator:
     """
     Generates text by sampling from a HuggingFace dataset (e.g. wikitext).
     """
-    def __init__(self, dataset_name="wikitext", config="wikitext-2-raw-v1", split="train"):
+    def __init__(self, language="en"):
         global HAS_DATASETS
         if not HAS_DATASETS:
             return
             
-        print(f"Loading dataset {dataset_name}/{config}...")
-        try:
-            self.dataset = load_dataset(dataset_name, config, split=split)
-            # Filter extremely short texts (headers etc)
-            self.texts = [t for t in self.dataset["text"] if len(t.strip()) > 200]
-            print(f"Loaded {len(self.texts)} usable text samples from {dataset_name}.")
-        except Exception as e:
-            print(f"Failed to load dataset: {e}")
-            HAS_DATASETS = False # Fallback
+        self.language = language
+        split = "train"
+        
+        if language == "ko":
+            # Try multiple options for Korean dataset
+            options = [
+                ("beomi/kowiki-20240401", "default"),
+                ("wikipedia", "20220301.ko"),
+                ("wikimedia/wikipedia", "20231101.ko")
+            ]
+            
+            success = False
+            for dataset_name, config in options:
+                print(f"Loading dataset {dataset_name}/{config} (lang={language})...")
+                try:
+                    self.dataset = load_dataset(dataset_name, config, split=split)
+                    # Some datasets use 'text', others might use 'content'
+                    text_field = "text" if "text" in self.dataset.column_names else "content"
+                    self.texts = [t for t in self.dataset[text_field] if t and len(t.strip()) > 100]
+                    if self.texts:
+                        print(f"Loaded {len(self.texts)} usable text samples from {dataset_name}.")
+                        success = True
+                        break
+                except Exception as e:
+                    print(f"Failed to load {dataset_name}: {e}")
+            
+            if not success:
+                print("Warning: All Korean datasets failed to load. Falling back to Faker.")
+                HAS_DATASETS = False
+        else:
+            dataset_name = "wikitext"
+            config = "wikitext-2-raw-v1"
+            print(f"Loading dataset {dataset_name}/{config} (lang={language})...")
+            try:
+                self.dataset = load_dataset(dataset_name, config, split=split)
+                self.texts = [t for t in self.dataset["text"] if t and len(t.strip()) > 200]
+                print(f"Loaded {len(self.texts)} usable text samples from {dataset_name}.")
+            except Exception as e:
+                print(f"Failed to load {dataset_name}: {e}")
+                HAS_DATASETS = False # Fallback
 
     def sample_text(self, min_length=100) -> str:
         if not HAS_DATASETS or not hasattr(self, 'texts') or not self.texts:
             return fake.paragraph(nb_sentences=5)
         
         # Simple sampling: pick a random text
-        # If it's very long, maybe slice it? 
-        # Wikitext articles can be long. Let's just pick a chunk.
         text = random.choice(self.texts)
         if len(text) > 2000:
             start = random.randint(0, len(text) - 1000)
@@ -70,13 +99,9 @@ class RealTextGenerator:
         return text
 
     def sample_title(self) -> str:
-        # Generate a title like string
         if not HAS_DATASETS or not hasattr(self, 'texts') or not self.texts:
             return fake.sentence()
         
-        # Just grab first few words of a text? Or fake it.
-        # Wikitext doesn't have explicit titles in raw config usually (embedded as = Title =).
-        # Let's stick to Faker for titles or extract from text.
         return fake.sentence()
 
 async def get_connection():
@@ -89,8 +114,13 @@ async def generate_data(args):
     random.seed(args.seed)
     Faker.seed(args.seed)
     
+    # Initialize Faker with locale
+    global fake
+    locale = "ko_KR" if args.language == "ko" else "en_US"
+    fake = Faker(locale)
+    
     # Initialize Text Generator
-    text_gen = RealTextGenerator() if HAS_DATASETS else None
+    text_gen = RealTextGenerator(language=args.language) if HAS_DATASETS else None
     
     # Generate Documents
     docs = []
@@ -252,6 +282,7 @@ def main():
     parser.add_argument("--update-rate", type=float, default=0.1, help="Rate of documents to update")
     parser.add_argument("--delete-rate", type=float, default=0.05, help="Rate of documents to delete")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument("--language", type=str, default="en", choices=["en", "ko"], help="Language for dataset generation")
     
     args = parser.parse_args()
     

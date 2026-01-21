@@ -205,3 +205,11 @@ Valkey의 한계를 극복하고 Postgres의 강력한 검색 기능을 활용�
     - 생성된 데이터가 실제 문맥을 유지하는지 확인
     - 대량 데이터 생성 시의 성능(속도) 및 메모리 사용량 최적화
 
+
+## Epic 10: 다국어 데이터 지원 (Multilingual Data Support)
+글로벌 서비스 확장을 대비하여 한국어 등 다국어 데이터 생성 및 검색을 지원합니다.
+
+- [ ] **ADV-012: 한국어 데이터 생성 지원**
+    - `app/generate_dataset.py`에 `--language` 인자 추가
+    - `ko` 선택 시 `beomi/kowiki-20240401` 데이터셋 로드
+    - Fallback으로 `Faker("ko_KR")` 적용

@@ -11,6 +11,10 @@ from usecase_rag_highperf.app.common import pack_f32, EMBEDDING_DIM
 logger = logging.getLogger(__name__)
 
 async def embed_text_ollama(text: str) -> bytes:
+    # Add prefix for nomic-embed-text
+    if settings.OLLAMA_MODEL.startswith("nomic") and not text.startswith("search_query:"):
+        text = f"search_query: {text}"
+
     url = f"{settings.OLLAMA_BASE_URL}/api/embeddings"
     payload = {
         "model": settings.OLLAMA_MODEL,

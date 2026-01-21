@@ -94,7 +94,26 @@ Valkey 데이터가 유실되었을 때 Postgres SoR을 통해 복구하는 시�
 1.  사이드바 **Search Mode**를 `hybrid`로 선택합니다.
 2.  **Hybrid Weights** 슬라이더를 조절해 봅니다 (예: Semantic 0.8 / Keyword 0.2).
 3.  검색을 실행하고 결과의 순위가 변경되는지 관찰합니다.
-    *   **Debug Mode** 체크박스를 켜면 각 결과의 `vector` 점수와 `bm25` 점수, 최종 `final` 점수를 상세히 볼 수 있습니다.
+    *   Debug Mode 체크박스를 켜면 각 결과의 `vector` 점수와 `bm25` 점수, 최종 `final` 점수를 상세히 볼 수 있습니다.
+
+### Scenario F: Multi-language Data Generation (Korean Support)
+`ADV-012` 과제에서 구현된 한국어 데이터 생성 및 적재 기능을 테스트합니다.
+
+1.  **한국어 데이터 생성**:
+    ```bash
+    # --language ko 옵션을 사용하여 한국어 위키백과 기반 데이터 생성
+    python app/generate_dataset.py --docs 50 --language ko
+    ```
+    *   `wikimedia/wikipedia` (ko) 데이터셋을 자동으로 로드하며, 실패 시 한국어 로케일이 적용된 `Faker`를 사용합니다.
+2.  **데이터 인덱싱**:
+    ```bash
+    # 생성된 outbox_events를 처리하여 Postgres SoR 및 Valkey에 적재
+    python app/indexer.py
+    ```
+3.  **한국어 검색 테스트**:
+    *   Streamlit UI에 접속합니다.
+    *   **Search Mode**를 `semantic`으로 설정합니다.
+    *   검색창에 한국어 쿼리(예: "대한민국의 역사", "서울의 고층 빌딩")를 입력하고 검색 결과가 한국어로 정상 출력되는지 확인합니다.
 
 ## 5. 문제 해결 (Troubleshooting)
 

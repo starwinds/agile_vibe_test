@@ -33,6 +33,7 @@
 | ADV-009 | 데이터 샘플링 및 전처리 | ✅ | 실제 문맥 데이터 추출 및 정제 로직 구현 |
 | ADV-010 | 데이터 생성기 고도화 | ✅ | generate_dataset.py 실제 데이터 기반으로 고도화 완료 |
 | ADV-011 | 데이터 품질 및 성능 검증 | ✅ | 실제 문맥 유지 및 적재 확인 완료 |
+| ADV-012 | 한국어 데이터 생성 지원 | ✅ | wikimedia/wikipedia(ko) 연동 및 Faker 로케일 지원 |
 
 ## 이슈 및 특이사항
 *   **Valkey Search 모듈의 Full-Text Search(TEXT 타입) 미지원 이슈**

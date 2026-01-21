@@ -3,16 +3,29 @@ import numpy as np
 import requests
 import struct
 
-EMBEDDING_DIM = 768
+EMBEDDING_DIM = 1024
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = "nomic-embed-text"
+OLLAMA_MODEL = "mxbai-embed-large"
 
-def embed_text(text: str) -> np.ndarray:
+def embed_text(text: str, task_type: str = "search_document") -> np.ndarray:
     """
     Generates an embedding for the given text using Ollama.
     Returns a normalized float32 numpy array of shape (EMBEDDING_DIM,).
+    
+    Args:
+        text: The text to embed.
+        task_type: 'search_document' for indexing, 'search_query' for search. 
+                   If OLLAMA_MODEL starts with 'nomic', appropriate prefix is added.
     """
     url = f"{OLLAMA_BASE_URL}/api/embeddings"
+    
+    # Handle task prefix for nomic-embed-text
+    if OLLAMA_MODEL.startswith("nomic"):
+        if task_type == "search_document" and not text.startswith("search_document:"):
+            text = f"search_document: {text}"
+        elif task_type == "search_query" and not text.startswith("search_query:"):
+            text = f"search_query: {text}"
+
     payload = {
         "model": OLLAMA_MODEL,
         "prompt": text

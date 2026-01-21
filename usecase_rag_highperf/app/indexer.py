@@ -114,7 +114,7 @@ def process_events():
                         tenant_id = data["tenant_id"]
                         
                         # Generate Embedding
-                        vector = embed_text(chunk_text)
+                        vector = embed_text(chunk_text, task_type="search_document")
                         vector_bytes = pack_f32(vector)
                         
                         # SoR: Postgres UPSERT
