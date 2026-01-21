@@ -22,6 +22,10 @@
 | **DEMO-008** | **Backend - Rebuild Tool** | Valkey 인덱스 Rebuild 스크립트 작성. | 0.5 day | TBD |
 | **DEMO-009** | **Demo API - Engine Support** | 검색 엔진 선택(`engine`) 파라미터 및 Fallback 로직 추가. | 0.5 day | TBD |
 | **DEMO-010** | **Streamlit UI - Engine Selector** | UI에 엔진 선택 및 Debug 정보 표시 추가. | 0.5 day | TBD |
+| **ADV-008** | **HuggingFace Datasets 연동** | `datasets` 라이브러리 추가 및 외부 데이터셋 로드 기능 구현. | 0.5 day | TBD |
+| **ADV-009** | **데이터 샘플링 및 전처리** | 로드된 데이터셋에서 실제 문서 추출 및 클리닝 로직 구현. | 1.0 day | TBD |
+| **ADV-010** | **데이터 생성기 고도화** | `generate_dataset.py`를 실제 데이터셋 기반으로 수정. | 1.0 day | TBD |
+| **ADV-011** | **데이터 품질 및 성능 검증** | 생성된 데이터의 품질 및 대량 생성 시 성능 최적화. | 0.5 day | TBD |
 
 ## 3. 상세 계획 (Detailed Plan)
 
@@ -134,6 +138,16 @@
 *   **Implementation Details**:
     *   **Sidebar**: 'Search Engine' 라디오 버튼 또는 셀렉트박스 추가.
     *   **Debug**: 결과 화면에 실제 사용된 엔진 정보 표시.
+
+### 3.11 고품질 데이터 생성 (High-Quality Data Gen)
+*   **Task ID**: ADV-008 ~ ADV-010
+*   **Files**: `app/generate_dataset.py`, `app/requirements.txt`
+*   **Implementation Details**:
+    1.  **Dependencies**: `datasets`, `pandas` 추가.
+    2.  **Dataset Load**: `datasets.load_dataset("wikitext", "wikitext-2-raw-v1", split="train")` 등을 활용하여 실제 문장 로드.
+    3.  **Preprocessing**: 빈 줄 제거, 최소 길이 미만 문서 필터링, 특수 문자 정제.
+    4.  **Integration**: `generate_dataset.py` 내의 `fake.paragraph()` 호출부를 로드된 실제 데이터셋의 샘플 추출 로직으로 교체.
+    5.  **Performance**: 대량 데이터 생성 시 `itertools.islice` 등을 활용하여 메모리 효율성 확보.
 
 ## 4. 검증 계획 (Verification Plan)
 *   **Prerequisite**: `source .venv/bin/activate` (기존 venv 활용)

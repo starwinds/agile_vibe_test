@@ -15,11 +15,12 @@ async def check_health() -> Dict[str, Any]:
             logger.error(f"Health check failed: {e}")
             return {"status": "error", "detail": str(e)}
 
-async def search_api(query: str, mode: str, top_k: int, weights: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
+async def search_api(query: str, mode: str, top_k: int, engine: str = "valkey", weights: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
     payload = {
         "query": query,
         "mode": mode,
-        "top_k": top_k
+        "top_k": top_k,
+        "engine": engine
     }
     if weights and mode == "hybrid":
         payload["weights"] = weights

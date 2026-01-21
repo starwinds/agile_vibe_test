@@ -5,12 +5,21 @@ import os
 import random
 import uuid
 import time
+import re
 from typing import List, Dict, Any
 
 from faker import Faker
 import psycopg
 from psycopg.rows import dict_row
 from dotenv import load_dotenv
+
+# Try importing datasets
+try:
+    from datasets import load_dataset
+    HAS_DATASETS = True
+except ImportError:
+    HAS_DATASETS = False
+    print("Warning: 'datasets' library not found. Falling back to Faker.")
 
 # Load environment variables
 load_dotenv()
@@ -25,6 +34,51 @@ DSN = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 fake = Faker()
 
+class RealTextGenerator:
+    """
+    Generates text by sampling from a HuggingFace dataset (e.g. wikitext).
+    """
+    def __init__(self, dataset_name="wikitext", config="wikitext-2-raw-v1", split="train"):
+        global HAS_DATASETS
+        if not HAS_DATASETS:
+            return
+            
+        print(f"Loading dataset {dataset_name}/{config}...")
+        try:
+            self.dataset = load_dataset(dataset_name, config, split=split)
+            # Filter extremely short texts (headers etc)
+            self.texts = [t for t in self.dataset["text"] if len(t.strip()) > 200]
+            print(f"Loaded {len(self.texts)} usable text samples from {dataset_name}.")
+        except Exception as e:
+            print(f"Failed to load dataset: {e}")
+            HAS_DATASETS = False # Fallback
+
+    def sample_text(self, min_length=100) -> str:
+        if not HAS_DATASETS or not hasattr(self, 'texts') or not self.texts:
+            return fake.paragraph(nb_sentences=5)
+        
+        # Simple sampling: pick a random text
+        # If it's very long, maybe slice it? 
+        # Wikitext articles can be long. Let's just pick a chunk.
+        text = random.choice(self.texts)
+        if len(text) > 2000:
+            start = random.randint(0, len(text) - 1000)
+            text = text[start:start+1000]
+        
+        # Cleanup
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text
+
+    def sample_title(self) -> str:
+        # Generate a title like string
+        if not HAS_DATASETS or not hasattr(self, 'texts') or not self.texts:
+            return fake.sentence()
+        
+        # Just grab first few words of a text? Or fake it.
+        # Wikitext doesn't have explicit titles in raw config usually (embedded as = Title =).
+        # Let's stick to Faker for titles or extract from text.
+        return fake.sentence()
+
 async def get_connection():
     return await psycopg.AsyncConnection.connect(DSN, row_factory=dict_row)
 
@@ -34,6 +88,9 @@ async def generate_data(args):
     # Initialize seeds
     random.seed(args.seed)
     Faker.seed(args.seed)
+    
+    # Initialize Text Generator
+    text_gen = RealTextGenerator() if HAS_DATASETS else None
     
     # Generate Documents
     docs = []
@@ -46,12 +103,16 @@ async def generate_data(args):
     print("Generating documents and chunks...")
     for _ in range(args.docs):
         doc_id = str(uuid.uuid4())
-        title = fake.sentence()
+        title = text_gen.sample_title() if text_gen else fake.sentence()
+        
         # Generate content with multiple paragraphs
         num_chunks = max(1, int(random.gauss(args.avg_chunks, args.avg_chunks * 0.2)))
         
         # Generate raw text chunks
-        doc_chunks_text = [fake.paragraph(nb_sentences=5) for _ in range(num_chunks)]
+        if text_gen:
+             doc_chunks_text = [text_gen.sample_text() for _ in range(num_chunks)]
+        else:
+             doc_chunks_text = [fake.paragraph(nb_sentences=5) for _ in range(num_chunks)]
         
         docs.append({
             "doc_id": doc_id,
@@ -98,22 +159,16 @@ async def generate_data(args):
         docs_to_update = random.sample(docs, num_updates)
         for doc in docs_to_update:
             doc['version'] += 1
-            # In a real scenario, we might update title or content.
-            # Here, let's simulate updating the last chunk or adding a new one.
-            # For simplicity, we just generate a CHUNK_UPSERT event for an existing chunk with new text.
-            # Finding a chunk for this doc
             doc_chunks = [c for c in chunks if c['doc_id'] == doc['doc_id']]
             if doc_chunks:
                 target_chunk = doc_chunks[-1]
-                new_text = fake.paragraph(nb_sentences=5) + " (Updated)"
-                target_chunk['chunk_text'] = new_text # Update in memory list too? Not strictly needed for DB insert if we handle conflicts, but here we do batch insert.
-                # Actually, if we do batch insert of initial state, updates should probably be separate DB ops or events.
-                # But to keep it simple and fast: We will insert the final state of data into DB, 
-                # and generate events for the "actions" that happened.
-                # WAIT. The outbox pattern implies events drive the indexer.
-                # If we insert "updated" state into DB, the events should reflect that.
+                if text_gen:
+                    new_text = text_gen.sample_text() + " (Updated)"
+                else:
+                    new_text = fake.paragraph(nb_sentences=5) + " (Updated)"
+                    
+                target_chunk['chunk_text'] = new_text
                 
-                # Let's append an event.
                 outbox_events.append({
                     "event_type": "CHUNK_UPSERT",
                     "payload": json.dumps({
@@ -129,14 +184,8 @@ async def generate_data(args):
     print(f"Generating deletes for {num_deletes} documents...")
     
     if num_deletes > 0 and len(docs) > 0:
-        # We delete from the docs that are NOT updated (to avoid confusion) or just random.
-        # Let's just pick random docs.
         docs_to_delete = random.sample(docs, num_deletes)
         for doc in docs_to_delete:
-            # Add DELETE event
-            # For a document delete, we might need multiple chunk deletes or a doc delete event.
-            # The plan says event_type: CHUNK_DELETE.
-            # Typically, we'd delete all chunks.
             doc_chunks = [c for c in chunks if c['doc_id'] == doc['doc_id']]
             for chunk in doc_chunks:
                 outbox_events.append({
@@ -147,31 +196,6 @@ async def generate_data(args):
                         "tenant_id": tenant_id
                     })
                 })
-            
-            # Remove from DB lists (simulating they are gone or marked deleted)
-            # But wait, if we insert them and then delete them in same batch... 
-            # Ideally, the DB state should reflect the *end* state, OR we insert everything and let the indexer handle it.
-            # "Data Generator" usually sets up the initial DB state.
-            # If I exclude them from `docs` and `chunks` lists, they won't be in DB.
-            # But the events will be in outbox. This is good for testing the "Delete" flow.
-            # So: Remove from `docs` and `chunks` lists to be inserted, but keep events?
-            # Or insert them, then they get deleted?
-            # If the DB doesn't have them, the "DELETE" event might fail if it tries to look them up (depending on consumer logic).
-            # Usually, soft delete is used.
-            # Let's assume we INSERT everything, and the events tell the indexer what to do.
-            # The "Delete Rate" implies these docs *should be deleted*.
-            # If I want to test "Processing of Deletes", the DB should probably NOT have them at the end, OR the events trigger removal from Vector DB.
-            # Let's assume the DB keeps them (or they are soft deleted) but for this script, I'll just keep them in DB so we can verify they exist before deletion?
-            # Actually, standard flow: Data is in Source DB. Event -> Sync to Vector DB.
-            # If Source DB deletes data, it sends Event -> Vector DB deletes data.
-            # So if I want to simulate "Deleted Docs", I should probably NOT insert them into `documents` table at the end? 
-            # OR, I insert them, and then issue a DELETE SQL command?
-            # The task says: "Batch Insert ... psycopg ... copy".
-            # I will Insert ALL generated docs/chunks into DB (Initial State).
-            # Then I will Insert Events.
-            # If "Delete Rate" means "These docs are deleted", maybe I should create a separate "Deleted" batch?
-            # Let's interpret "Delete Rate" as: generating `CHUNK_DELETE` events for some of the existing docs.
-            pass
 
     print(f"Inserting {len(docs)} docs, {len(chunks)} chunks, {len(outbox_events)} events...")
 

@@ -4,7 +4,7 @@ import time
 import redis
 import psycopg
 from dotenv import load_dotenv
-from common import embed_text, pack_f32, EMBEDDING_DIM
+from common import embed_text, pack_f32, EMBEDDING_DIM, OLLAMA_MODEL
 
 load_dotenv()
 
@@ -66,6 +66,7 @@ def create_index():
             "SCHEMA",
             "doc_id", "TAG",
             "tenant_id", "TAG",
+            "chunk_text", "TAG",
             "vector", "VECTOR", "HNSW", "6", "TYPE", "FLOAT32", "DIM", str(EMBEDDING_DIM), "DISTANCE_METRIC", "COSINE"
         )
         print("Index created.")
@@ -116,6 +117,17 @@ def process_events():
                         vector = embed_text(chunk_text)
                         vector_bytes = pack_f32(vector)
                         
+                        # SoR: Postgres UPSERT
+                        cur.execute("""
+                            INSERT INTO chunk_embeddings (chunk_id, doc_id, embedding, model_name, model_version)
+                            VALUES (%s, %s, %s, %s, %s)
+                            ON CONFLICT (chunk_id) 
+                            DO UPDATE SET embedding = EXCLUDED.embedding, 
+                                          model_name = EXCLUDED.model_name,
+                                          model_version = EXCLUDED.model_version,
+                                          embedded_at = CURRENT_TIMESTAMP
+                        """, (chunk_id, doc_id, vector.tolist(), OLLAMA_MODEL, "v1"))
+                        
                         # Index to Valkey
                         # Key: chunk:{chunk_id}
                         key = f"chunk:{chunk_id}"
@@ -129,6 +141,10 @@ def process_events():
                         
                     elif event_type == "CHUNK_DELETE":
                         chunk_id = data["chunk_id"]
+                        
+                        # SoR: Postgres DELETE
+                        cur.execute("DELETE FROM chunk_embeddings WHERE chunk_id = %s", (chunk_id,))
+                        
                         key = f"chunk:{chunk_id}"
                         r.delete(key)
                         print(f"Deleted chunk {chunk_id}")

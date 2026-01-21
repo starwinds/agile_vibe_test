@@ -7,6 +7,12 @@ class Settings(BaseSettings):
     VALKEY_INDEX: str = "idx:chunks"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_MODEL: str = "nomic-embed-text"
+    
+    POSTGRES_HOST: str = "localhost"
+    POSTGRES_PORT: str = "5432"
+    POSTGRES_DB: str = "rag_db"
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
 
     class Config:
         env_file = ".env"

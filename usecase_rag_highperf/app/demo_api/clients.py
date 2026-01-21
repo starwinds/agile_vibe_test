@@ -1,4 +1,5 @@
 import redis.asyncio as redis
+import psycopg
 from .settings import settings
 
 class RedisClient:
@@ -28,3 +29,15 @@ class RedisClient:
         if cls._instance:
             await cls._instance.aclose()
             cls._instance = None
+
+class PostgresClient:
+    @classmethod
+    async def connect(cls) -> psycopg.AsyncConnection:
+        return await psycopg.AsyncConnection.connect(
+            host=settings.POSTGRES_HOST,
+            port=settings.POSTGRES_PORT,
+            dbname=settings.POSTGRES_DB,
+            user=settings.POSTGRES_USER,
+            password=settings.POSTGRES_PASSWORD,
+            autocommit=True
+        )

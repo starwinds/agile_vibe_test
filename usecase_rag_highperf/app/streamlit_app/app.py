@@ -22,6 +22,14 @@ with st.sidebar:
                 st.error(f"Failed: {health}")
 
     mode = st.radio("Search Mode", ["semantic", "keyword", "hybrid"], index=0)
+    
+    engine = st.selectbox(
+        "Search Engine (Semantic/Hybrid)", 
+        ["valkey", "pgvector", "fallback"], 
+        index=0,
+        help="Select the backend engine for vector search. 'fallback' tries Valkey then PG."
+    )
+    
     top_k = st.selectbox("Top K", [5, 10, 20, 50], index=0)
     
     weights = None
@@ -54,8 +62,8 @@ if st.button("Search", type="primary") or query:
     if not query:
         st.warning("Please enter a query.")
     else:
-        with st.spinner(f"Searching ({mode})..."):
-            resp = asyncio.run(search_api(query, mode, top_k, weights))
+        with st.spinner(f"Searching ({mode} - {engine})..."):
+            resp = asyncio.run(search_api(query, mode, top_k, engine, weights))
             
             if "error" in resp:
                 st.error(f"{resp['error']}: {resp.get('detail')}")
@@ -81,4 +89,5 @@ if st.button("Search", type="primary") or query:
                                 st.text(r.get('content', 'No content available'))
                             
                             if debug_mode:
+                                st.write(f"Source: {r.get('source', 'unknown')}")
                                 st.json(r["scores"])

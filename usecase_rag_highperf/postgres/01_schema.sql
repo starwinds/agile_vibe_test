@@ -36,3 +36,14 @@ CREATE TABLE IF NOT EXISTS outbox_events (
 );
 
 CREATE INDEX idx_outbox_events_status ON outbox_events(status);
+
+CREATE TABLE IF NOT EXISTS chunk_embeddings (
+    chunk_id TEXT PRIMARY KEY,
+    doc_id TEXT NOT NULL,
+    embedding vector(768),
+    model_name TEXT,
+    model_version TEXT,
+    text_hash TEXT,
+    embedded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (chunk_id) REFERENCES chunks(chunk_id) ON DELETE CASCADE
+);

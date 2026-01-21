@@ -5,7 +5,7 @@ import numpy as np
 from typing import List, Dict, Any
 from .schemas import SearchRequest, SearchResult
 from .settings import settings
-from .clients import RedisClient
+from .clients import RedisClient, PostgresClient
 from usecase_rag_highperf.app.common import pack_f32, EMBEDDING_DIM
 
 logger = logging.getLogger(__name__)
@@ -91,12 +91,29 @@ def parse_redis_response(response: List[Any], with_scores: bool = False, vector_
     return results
 
 async def search_semantic(req: SearchRequest) -> List[SearchResult]:
-    r = RedisClient.get_instance()
-    
     # 1. Embed
-    vec_bytes = await embed_text_ollama(req.query)
-    
-    # 2. Search
+    try:
+        vec_bytes = await embed_text_ollama(req.query)
+    except Exception as e:
+        logger.error(f"Failed to embed query: {e}")
+        return []
+
+    if req.engine == "valkey":
+        return await _search_valkey(req, vec_bytes)
+    elif req.engine == "pgvector":
+        return await _search_pgvector(req, vec_bytes)
+    elif req.engine == "fallback":
+        try:
+            return await _search_valkey(req, vec_bytes)
+        except Exception as e:
+            logger.warning(f"Valkey search failed, falling back to PG: {e}")
+            return await _search_pgvector(req, vec_bytes)
+    else:
+        # Default to valkey
+        return await _search_valkey(req, vec_bytes)
+
+async def _search_valkey(req: SearchRequest, vec_bytes: bytes) -> List[SearchResult]:
+    r = RedisClient.get_instance()
     # FT.SEARCH idx "*=>[KNN k @vector $vec AS vector_score]" PARAMS 2 vec <bytes> DIALECT 2 RETURN 3 doc_id chunk_text vector_score
     query_str = f"*=>[KNN {req.top_k} @vector $vec AS vector_score]"
     
@@ -108,8 +125,8 @@ async def search_semantic(req: SearchRequest) -> List[SearchResult]:
             "RETURN", "3", "doc_id", "chunk_text", "vector_score"
         )
     except Exception as e:
-        logger.error(f"Semantic search failed: {e}")
-        return []
+        logger.error(f"Semantic search failed (Valkey): {e}")
+        raise e
 
     parsed = parse_redis_response(res, with_scores=False, vector_score_field="vector_score")
     
@@ -129,10 +146,6 @@ async def search_semantic(req: SearchRequest) -> List[SearchResult]:
     for item in parsed:
         dist = item["score"]
         # Convert distance to similarity score for display (0..1)
-        # Cosine distance is 0 (same) to 2 (opposite).
-        # Similarity = 1 - distance/2 ? Or just 1 - distance (if normalized vectors and dist=1-cos)
-        # Assuming RediSearch uses 1 - cosine_sim for distance.
-        # So sim = 1 - dist.
         sim = 1.0 - dist 
         
         out.append(SearchResult(
@@ -140,49 +153,72 @@ async def search_semantic(req: SearchRequest) -> List[SearchResult]:
             doc_id=item["fields"].get("doc_id", "unknown"),
             snippet=item["fields"].get("chunk_text", "")[:200] + "...",
             content=item["fields"].get("chunk_text", ""),
-            scores={"vector": sim, "distance": dist}
+            scores={"vector": sim, "distance": dist},
+            source="valkey"
+        ))
+    return out
+
+async def _search_pgvector(req: SearchRequest, vec_bytes: bytes) -> List[SearchResult]:
+    logger.info("Executing PGVector search with explicit vector cast.")
+    vec = np.frombuffer(vec_bytes, dtype=np.float32)
+    vec_list = vec.tolist()
+    
+    conn = await PostgresClient.connect()
+    async with conn:
+        async with conn.cursor() as cur:
+            # chunk_embeddings join chunks
+            # We convert vec_list to string "[0.1, 0.2, ...]" so psycopg passes it as text,
+            # allowing explicit cast ::vector to work properly in Postgres.
+            await cur.execute("""
+                SELECT ce.doc_id, c.chunk_text, (ce.embedding <=> %s::vector) as distance
+                FROM chunk_embeddings ce
+                JOIN chunks c ON ce.chunk_id = c.chunk_id
+                ORDER BY distance ASC
+                LIMIT %s
+            """, (str(vec_list), req.top_k))
+            rows = await cur.fetchall()
+            
+    out = []
+    for rank, row in enumerate(rows, 1):
+        doc_id, chunk_text, distance = row
+        # pgvector distance is typically 0..2 for cosine (1-cos) or 0..sqrt(2) for euclidean?
+        # <=> is cosine distance operator. 0 is exact match, 1 is orthogonal, 2 is opposite.
+        sim = 1.0 - distance
+        out.append(SearchResult(
+            rank=rank,
+            doc_id=doc_id,
+            snippet=chunk_text[:200] + "...",
+            content=chunk_text,
+            scores={"vector": sim, "distance": distance},
+            source="pgvector"
         ))
     return out
 
 async def search_keyword(req: SearchRequest) -> List[SearchResult]:
-    r = RedisClient.get_instance()
+    logger.info(f"Executing Keyword search via Postgres ILIKE for query: {req.query}")
     
-    # FT.SEARCH idx "query" WITHSCORES RETURN 2 doc_id chunk_text
-    # Simple query parsing?
-    # Escape special chars if needed.
-    
-    try:
-        res = await r.execute_command(
-            "FT.SEARCH", settings.VALKEY_INDEX, req.query,
-            "WITHSCORES",
-            "LIMIT", "0", str(req.top_k),
-            "RETURN", "2", "doc_id", "chunk_text"
-        )
-    except Exception as e:
-        logger.error(f"Keyword search failed: {e}")
-        return []
-        
-    parsed = parse_redis_response(res, with_scores=True)
-    
-    # Explicitly fetch chunk_text for all results
-    if parsed:
-        keys = [item["key"] for item in parsed]
-        async with r.pipeline() as pipe:
-            for key in keys:
-                pipe.hget(key, "chunk_text")
-            chunks = await pipe.execute()
-        
-        for i, chunk in enumerate(chunks):
-            if chunk:
-                parsed[i]["fields"]["chunk_text"] = chunk.decode("utf-8") if isinstance(chunk, bytes) else chunk
-
+    conn = await PostgresClient.connect()
+    async with conn:
+        async with conn.cursor() as cur:
+            # Simple ILIKE search on chunk_text
+            search_pattern = f"%{req.query}%"
+            await cur.execute("""
+                SELECT c.doc_id, c.chunk_text
+                FROM chunks c
+                WHERE c.chunk_text ILIKE %s
+                LIMIT %s
+            """, (search_pattern, req.top_k))
+            rows = await cur.fetchall()
+            
     out = []
-    for item in parsed:
+    for rank, row in enumerate(rows, 1):
+        doc_id, chunk_text = row
         out.append(SearchResult(
-            rank=item["rank"],
-            doc_id=item["fields"].get("doc_id", "unknown"),
-            snippet=item["fields"].get("chunk_text", "")[:200] + "...",
-            content=item["fields"].get("chunk_text", ""),
-            scores={"bm25": item["score"]}
+            rank=rank,
+            doc_id=doc_id,
+            snippet=chunk_text[:200] + "...",
+            content=chunk_text,
+            scores={"bm25_simulated": 1.0}, # ILIKE doesn't give scores, using 1.0
+            source="postgres"
         ))
     return out

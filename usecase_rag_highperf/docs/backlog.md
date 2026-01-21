@@ -122,51 +122,86 @@ Single Tenant 환경에서의 대규모 데이터 처리 및 성능 벤치마크
 ## Epic 6: Demo App 개발 (Demo Application)
 End-user가 체감할 수 있는 검색 데모 애플리케이션(FastAPI + Streamlit)을 개발합니다.
 
-- [ ] **DEMO-001: Demo API 프로젝트 구조 및 의존성 구성**
+- [x] **DEMO-001: Demo API 프로젝트 구조 및 의존성 구성**
     - `app/demo_api/` 디렉토리 및 기본 파일(`main.py`, `settings.py`, `clients.py`) 생성
     - `app/streamlit_app/` 디렉토리 생성
     - `requirements-demo.txt` 작성 (`fastapi`, `uvicorn`, `streamlit`, `httpx` 등)
 
-- [ ] **DEMO-002: Demo API 구현 (Search Logic)**
-    - `app/demo_api/search_valkey.py`: Semantic(Vector), Keyword(BM25) 검색 구현
+- [x] **DEMO-002: Demo API 구현 (Search Logic)**
+    - `app/demo_api/search_valkey.py`: Semantic(Vector), Keyword(BM25/ILIKE) 검색 구현
     - `app/demo_api/hybrid.py`: Hybrid 검색 (2-pass union + rerank) 구현
     - `app/demo_api/main.py`: `/search/semantic`, `/search/keyword`, `/search/hybrid` 엔드포인트 구현
 
-- [ ] **DEMO-003: Streamlit UI 구현 (Search Playground)**
+- [x] **DEMO-003: Streamlit UI 구현 (Search Playground)**
     - `app/streamlit_app/app.py`: 검색 모드 선택, Top-K 설정, Hybrid 가중치 조절 UI 구현
     - 검색 결과 리스트 및 Debug 모드(점수 Breakdown) 표시 구현
     - `app/streamlit_app/ui_presets.py`: 데모용 프리셋 쿼리 9종 버튼 연동
 
-- [ ] **DEMO-004: 문서화 및 가이드**
+- [x] **DEMO-004: 문서화 및 가이드**
     - `README.md`에 Demo App 실행 방법 및 시나리오 추가
 
-- [ ] **DEMO-005: 검색 결과 표시 개선 (Search Result Enhancement)**
+- [x] **DEMO-005: 검색 결과 표시 개선 (Search Result Enhancement)**
     - 검색 결과에 Vector Score, Distance 외에 사용자가 인식할 수 있는 원본 콘텐츠(본문 텍스트 등)를 함께 표시
     - 필요 시 `SearchResult` 스키마 및 UI 레이아웃 조정
 
 ## Epic 7: Pattern B Incremental (Postgres SoR)
 기존 Pattern A(Valkey-centric) 구조 위에 Postgres를 Embedding SoR로 도입하여 안정성을 강화하고, Engine 선택 기능을 추가합니다.
 
-- [ ] **DEMO-006: Backend - Schema Update**
+- [x] **DEMO-006: Backend - Schema Update**
     - `postgres/01_schema.sql`: `chunk_embeddings` 테이블 추가
     - Columns: `chunk_id`, `doc_id`, `embedding`, `model_name`, `model_version`, `text_hash`, `embedded_at`
 
-- [ ] **DEMO-007: Backend - Indexer Update**
+- [x] **DEMO-007: Backend - Indexer Update**
     - `app/indexer.py` 수정
     - `CHUNK_UPSERT`: Postgres `chunk_embeddings`에 UPSERT 후 Valkey HSET
     - `CHUNK_DELETE`: Postgres `chunk_embeddings` 삭제 후 Valkey DEL
 
-- [ ] **DEMO-008: Backend - Rebuild Tool**
+- [x] **DEMO-008: Backend - Rebuild Tool**
     - `app/tools/rebuild_valkey_from_pg.py` 구현
     - Postgres `chunk_embeddings` 조회 -> Valkey 인덱스 초기화 -> 재적재 (Pipeline)
 
-- [ ] **DEMO-009: Demo API - Engine Support**
+- [x] **DEMO-009: Demo API - Engine Support**
     - `app/demo_api/` 수정
     - `SearchRequest`에 `engine` 파라미터 추가 (`valkey`, `pgvector`, `fallback`)
     - `search_valkey.py`에 `pgvector` 검색 로직 및 Fallback 로직 추가
 
-- [ ] **DEMO-010: Streamlit UI - Engine Selector**
+- [x] **DEMO-010: Streamlit UI - Engine Selector**
     - `app/streamlit_app/app.py` 수정
     - Sidebar에 Engine 선택(Radio/Select) 추가
     - Debug 모드 시 실제 사용된 Engine 정보 표시
+
+## Epic 8: 검색 고도화 및 최적화 (Advanced Search & Optimization)
+Valkey의 한계를 극복하고 Postgres의 강력한 검색 기능을 활용하여 검색 품질과 성능을 최적화합니다.
+
+- [ ] **ADV-005: Postgres Full-Text Search 도입**
+    - `chunks` 테이블에 `tsvector` 컬럼 추가 및 `GIN` 인덱스 생성
+    - `pg_trgm` 확장 활성화 및 `chunk_text`에 인덱스 생성
+    - `demo_api`의 Keyword 검색 로직을 `ILIKE`에서 `websearch_to_tsquery` 또는 `plainto_tsquery`로 고도화 (Rank 지원)
+
+- [ ] **ADV-006: Hybrid Search 2.0 (RRF)**
+    - 현재의 선형 가중치 합(Linear Weighted Sum) 방식 외에 RRF(Reciprocal Rank Fusion) 알고리즘 도입
+    - 점수 스케일이 다른 Vector(Cosine Sim)와 Keyword(TS Rank) 결과를 효과적으로 결합
+
+- [ ] **ADV-007: Metadata Filtering**
+    - `SearchRequest`에 `filter` 파라미터 추가 (e.g., `tenant_id`, `doc_id`, `created_at` 범위)
+    - Valkey `FT.SEARCH` 및 Postgres 쿼리에 필터 조건 동적 적용 구현
+
+## Epic 9: 고품질 샘플 데이터 생성 (High-Quality Data Generation)
+의미 없는 무작위 텍스트 대신 실제 문맥을 가진 데이터를 활용하여 RAG 시스템의 신뢰도를 높입니다.
+
+- [ ] **ADV-008: HuggingFace Datasets 연동**
+    - `requirements.txt`에 `datasets` 라이브러리 추가
+    - `app/generate_dataset.py`에서 외부 데이터셋(e.g., Wikipedia, AG News) 로드 기능 구현
+
+- [ ] **ADV-009: 데이터 샘플링 및 전처리 로직 구현**
+    - 로드된 데이터셋에서 지정된 개수만큼의 실제 문서를 추출하는 로직 구현
+    - 너무 짧거나 긴 문서 필터링 및 클리닝 전처리 추가
+
+- [ ] **ADV-010: 데이터 생성기 고도화**
+    - `Faker.paragraph()`를 실제 데이터셋의 텍스트로 대체
+    - 문서 제목(Title) 또한 데이터셋의 메타데이터를 활용하도록 수정
+
+- [ ] **ADV-011: 데이터 품질 검증**
+    - 생성된 데이터가 실제 문맥을 유지하는지 확인
+    - 대량 데이터 생성 시의 성능(속도) 및 메모리 사용량 최적화
 
