@@ -68,6 +68,7 @@ python app/check_ollama.py
     *   `check_ollama.py`: Ollama 연동 확인 유틸리티
 *   `docs/`: 문서 및 분석 결과
     *   `retro2.md`: Sprint 2(Ollama 연동) 회고록
+    *   `retro4.md`: Sprint 4(Demo App & Pattern B) 회고록
 *   `postgres/`: DB 스키마 및 초기화 스크립트
 *   `docker-compose.yml`: 인프라 설정 파일
 

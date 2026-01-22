@@ -21,6 +21,7 @@ graph TD
         Ingest["Ingest Service\n(Data Loader)"]
         Indexer["Indexer Service\n(Async Worker)"]
         Rebuild["Rebuild Tool\n(Disaster Recovery)"]
+        Generator["Dataset Generator\n(Synthetic Data)"]
     end
 
     subgraph Data [Data Layer]
@@ -44,6 +45,10 @@ graph TD
     %% Ingest Flow
     Ingest -->|"Write Documents & Events"| PG
 
+    %% Generator Flow
+    Generator -->|"Bulk Insert"| PG
+
+
     %% Indexing Flow
     Indexer -->|"Poll Outbox Events"| PG
     Indexer -->|"Generate Embedding"| Ollama
@@ -60,7 +65,7 @@ graph TD
     classDef ai fill:#f4e1d2,stroke:#333,stroke-width:2px;
     
     class PG,Valkey storage;
-    class Streamlit,API,Ingest,Indexer,Rebuild app;
+    class Streamlit,API,Ingest,Indexer,Rebuild,Generator app;
     class Ollama ai;
 ```
 
@@ -74,6 +79,7 @@ graph TD
 *   **Ingest Service**: 원본 문서 데이터를 파싱하여 청크(Chunk)로 분할하고, Postgres에 저장하며 `outbox_events`를 발행합니다.
 *   **Indexer Service**: 비동기 워커 프로세스입니다. Postgres의 `outbox_events`를 폴링하여 변경 사항을 감지하고, Ollama를 통해 임베딩을 생성한 후 Valkey와 Postgres에 색인 정보를 업데이트합니다.
 *   **Rebuild Tool**: Valkey 데이터 유실 시, Postgres에 저장된 원본 데이터와 임베딩(`chunk_embeddings`)을 기반으로 Valkey 인덱스를 고속으로 복구합니다.
+*   **Dataset Generator**: 대규모 벤치마크 및 테스트를 위한 합성 데이터를 생성하여 Postgres에 Bulk Insert합니다. Faker 또는 HuggingFace Datasets(wikitext 등)를 사용합니다.
 
 ### 2.3 Data Layer
 *   **PostgreSQL (Source of Record)**: 시스템의 모든 영구 데이터를 저장하는 원천 저장소입니다.
