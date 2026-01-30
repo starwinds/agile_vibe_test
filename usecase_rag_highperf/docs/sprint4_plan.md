@@ -22,6 +22,8 @@
 | **DEMO-008** | **Backend - Rebuild Tool** | Valkey 인덱스 Rebuild 스크립트 작성. | 0.5 day | TBD |
 | **DEMO-009** | **Demo API - Engine Support** | 검색 엔진 선택(`engine`) 파라미터 및 Fallback 로직 추가. | 0.5 day | TBD |
 | **DEMO-010** | **Streamlit UI - Engine Selector** | UI에 엔진 선택 및 Debug 정보 표시 추가. | 0.5 day | TBD |
+| **DEMO-011** | **검색 결과 키워드 하이라이팅** | 검색 결과 본문 내 검색어 키워드 강조 표시. | 0.5 day | TBD |
+| **DEMO-012** | **Hybrid Search BM25 Score 버그 수정** | `bm25` vs `bm25_simulated` 키 불일치 수정. | 0.2 day | TBD |
 | **ADV-008** | **HuggingFace Datasets 연동** | `datasets` 라이브러리 추가 및 외부 데이터셋 로드 기능 구현. | 0.5 day | TBD |
 | **ADV-009** | **데이터 샘플링 및 전처리** | 로드된 데이터셋에서 실제 문서 추출 및 클리닝 로직 구현. | 1.0 day | TBD |
 | **ADV-010** | **데이터 생성기 고도화** | `generate_dataset.py`를 실제 데이터셋 기반으로 수정. | 1.0 day | TBD |
@@ -159,6 +161,24 @@
         *   `en`: 기존 `wikitext` 사용.
         *   `ko`: `beomi/kowiki-20240401` (split=`train`) 로드.
         *   **Fallback**: `Faker` 초기화 시 `locale` 설정 (`en_US` vs `ko_KR`).
+
+### 3.13 검색 결과 키워드 하이라이팅 (Keyword Highlighting)
+*   **Task ID**: DEMO-011
+*   **Files**: `app/streamlit_app/app.py`
+*   **Implementation Details**:
+    *   **Logic**:
+        *   사용자 쿼리 토큰화(공백 기준).
+        *   검색 결과(`content`, `snippet`) 내 해당 토큰과 일치(Case-insensitive)하는 텍스트에 하이라이팅 태그 적용.
+        *   Streamlit `st.markdown`의 HTML 렌더링 기능(`unsafe_allow_html=True`) 활용하여 시각적 강조.
+    *   **UI**:
+        *   검색 결과 카드 및 상세 보기(Expander) 모두 적용.
+
+### 3.14 Hybrid Search BM25 Score 버그 수정 (Metric Fix)
+*   **Task ID**: DEMO-012
+*   **Files**: `app/demo_api/search_valkey.py`
+*   **Implementation Details**:
+    *   **Root Cause**: `search_valkey.py`에서 반환하는 키는 `bm25_simulated`, `hybrid.py`에서 참조하는 키는 `bm25`로 불일치.
+    *   **Fix**: `search_valkey.py`의 `search_keyword` 함수 반환값에서 `bm25_simulated`를 `bm25`로 변경하여 일관성 확보.
 
 ## 4. 검증 계획 (Verification Plan)
 *   **Prerequisite**: `source .venv/bin/activate` (기존 venv 활용)

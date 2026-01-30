@@ -125,3 +125,8 @@ cd usecase_rag_highperf/app/streamlit_app
 streamlit run app.py
 ```
 브라우저 접속: http://localhost:8501
+
+### 7.4 주요 기능 (New)
+*   **Hybrid Search**: Valkey(Vector)와 Postgres(FTS) 결과를 결합하여 정확도 향상.
+*   **Keyword Highlighting**: 검색어와 일치하는 키워드를 본문에서 강조 표시.
+*   **Engine Selection**: 검색 엔진(Valkey, Postgres) 및 모드(Semantic, Keyword, Hybrid) 선택 가능.

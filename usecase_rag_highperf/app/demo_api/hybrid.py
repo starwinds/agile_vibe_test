@@ -1,10 +1,14 @@
 from typing import List, Dict, Set
+import asyncio
+import logging
 from .schemas import SearchRequest, SearchResult
 from .search_valkey import search_semantic, search_keyword
 
+logger = logging.getLogger(__name__)
+
 def normalize_scores(results: List[SearchResult], score_key: str) -> Dict[str, float]:
     """
-    Returns a dict {doc_id: normalized_score}
+    Returns a dict {doc_id: normalized_score} where normalized_score is in [0, 1].
     """
     if not results:
         return {}
@@ -17,6 +21,7 @@ def normalize_scores(results: List[SearchResult], score_key: str) -> Dict[str, f
     for r in results:
         val = r.scores.get(score_key, 0.0)
         if max_s - min_s == 0:
+            # If all scores are the same, they all get 1.0 if > 0, else 0.0
             normalized[r.doc_id] = 1.0 if max_s > 0 else 0.0
         else:
             normalized[r.doc_id] = (val - min_s) / (max_s - min_s)
@@ -24,18 +29,10 @@ def normalize_scores(results: List[SearchResult], score_key: str) -> Dict[str, f
     return normalized
 
 async def search_hybrid(req: SearchRequest) -> List[SearchResult]:
-    # 1. Parallel search (could be optimized with asyncio.gather)
-    # But for simplicity, we call them await sequentially or gather.
-    # Let's use simple await first or gather if imported.
-    import asyncio
-    
-    # We need to increase top_k for sub-queries to ensure overlap?
-    # Usually we fetch top_k * 2 or similar.
-    # Let's keep top_k for now or assume user passes large enough top_k.
-    # To get good hybrid results, we usually fetch more candidates.
+    # 1. Parallel search
     sub_k = req.top_k * 2
     
-    sem_req = SearchRequest(query=req.query, top_k=sub_k, mode="semantic")
+    sem_req = SearchRequest(query=req.query, top_k=sub_k, mode="semantic", engine=req.engine)
     key_req = SearchRequest(query=req.query, top_k=sub_k, mode="keyword")
     
     sem_res, key_res = await asyncio.gather(
@@ -43,38 +40,39 @@ async def search_hybrid(req: SearchRequest) -> List[SearchResult]:
         search_keyword(key_req)
     )
     
-    # 2. Normalize
-    # Semantic scores are already Similarity (0..1)? 
-    # In search_valkey.py we calculated sim = 1 - dist.
-    # If dist is not bounded 0..1, sim might not be either.
-    # But Min-Max scaling is safer.
+    logger.info(f"Hybrid Search: Query='{req.query}' | Semantic={len(sem_res)} docs | Keyword={len(key_res)} docs")
     
-    sem_norm = normalize_scores(sem_res, "vector")
-    key_norm = normalize_scores(key_res, "bm25")
+    # 2. Normalize for weighted sum calculation
+    # Note: We use "vector" for semantic and "bm25" for keyword.
+    sem_norm_map = normalize_scores(sem_res, "vector")
+    key_norm_map = normalize_scores(key_res, "bm25")
     
     # 3. Union Docs
-    all_docs = set(sem_norm.keys()) | set(key_norm.keys())
+    all_doc_ids = set(sem_norm_map.keys()) | set(key_norm_map.keys())
     
     # 4. Weighted Sum
     w_sem = req.weights.get("semantic", 0.5)
     w_key = req.weights.get("keyword", 0.5)
     
+    # Helper to quickly find raw results
+    raw_sem_map = {r.doc_id: r for r in sem_res}
+    raw_key_map = {r.doc_id: r for r in key_res}
+    
     merged_results = []
     
-    # We need snippet and other info.
-    # We prioritize info from semantic search, then keyword.
-    doc_map = {r.doc_id: r for r in sem_res}
-    for r in key_res:
-        if r.doc_id not in doc_map:
-            doc_map[r.doc_id] = r
-            
-    for doc_id in all_docs:
-        s_score = sem_norm.get(doc_id, 0.0)
-        k_score = key_norm.get(doc_id, 0.0)
+    for doc_id in all_doc_ids:
+        # Normalized scores for calculation
+        s_norm = sem_norm_map.get(doc_id, 0.0)
+        k_norm = key_norm_map.get(doc_id, 0.0)
         
-        final_score = (w_sem * s_score) + (w_key * k_score)
+        final_score = (w_sem * s_norm) + (w_key * k_norm)
         
-        base_result = doc_map[doc_id]
+        # Determine which result object to use as base (prefer semantic)
+        base_result = raw_sem_map.get(doc_id) or raw_key_map.get(doc_id)
+        
+        # Gather raw scores for display/debug
+        raw_vector_score = raw_sem_map[doc_id].scores.get("vector", 0.0) if doc_id in raw_sem_map else 0.0
+        raw_bm25_score = raw_key_map[doc_id].scores.get("bm25", 0.0) if doc_id in raw_key_map else 0.0
         
         merged_results.append(SearchResult(
             rank=0, # to be assigned
@@ -82,10 +80,13 @@ async def search_hybrid(req: SearchRequest) -> List[SearchResult]:
             snippet=base_result.snippet,
             content=base_result.content,
             scores={
-                "vector": sem_norm.get(doc_id, 0.0), # Store normalized for debug
-                "bm25": key_norm.get(doc_id, 0.0),
+                "vector": raw_vector_score, # RAW SCORE
+                "bm25": raw_bm25_score,     # RAW SCORE
+                "norm_vector": s_norm,      # Normalized for debug
+                "norm_bm25": k_norm,        # Normalized for debug
                 "final": final_score
-            }
+            },
+            source=f"hybrid({base_result.source})"
         ))
         
     # 5. Sort & Slice

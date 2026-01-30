@@ -1,5 +1,6 @@
 import streamlit as st
 import asyncio
+import re
 from api_client import check_health, search_api
 from ui_presets import PRESETS
 
@@ -7,6 +8,26 @@ st.set_page_config(page_title="RAG High-Perf Demo", layout="wide")
 
 st.title("🚀 RAG High-Perf Demo")
 st.markdown("FastAPI + Valkey (Vector + Text) Hybrid Search Demo")
+
+def highlight_text(text, query):
+    """
+    Highlights query tokens in the text using HTML <mark> tags.
+    Case-insensitive matching.
+    """
+    if not query or not text:
+        return text
+    
+    # Tokenize query by whitespace and escape for regex
+    tokens = [t for t in query.split() if t.strip()]
+    if not tokens:
+        return text
+        
+    escaped_tokens = [re.escape(t) for t in tokens]
+    # Create pattern: (token1|token2|...)
+    pattern = re.compile(f"({'|'.join(escaped_tokens)})", re.IGNORECASE)
+    
+    # Replace with marked text, preserving original case (\1)
+    return pattern.sub(r'<mark style="background-color: #ffd700; color: black;">\1</mark>', text)
 
 # Sidebar
 with st.sidebar:
@@ -95,15 +116,26 @@ if should_search:
                         col1, col2 = st.columns([1, 10])
                         with col1:
                             st.metric("Rank", r["rank"])
+                            # Score key must match backend (bm25, vector, final)
                             score_key = "final" if mode == "hybrid" else ("vector" if mode == "semantic" else "bm25")
                             val = r["scores"].get(score_key, 0.0)
                             st.caption(f"Score: {val:.4f}")
                             
+                            if mode == "hybrid" and debug_mode:
+                                st.caption(f"V: {r['scores'].get('vector', 0.0):.4f}")
+                                st.caption(f"K: {r['scores'].get('bm25', 0.0):.4f}")
+                            
                         with col2:
                             st.markdown(f"**Doc ID:** `{r['doc_id']}`")
-                            st.markdown(r['snippet'])
+                            
+                            # Highlight snippet
+                            snippet_html = highlight_text(r['snippet'], query)
+                            st.markdown(snippet_html, unsafe_allow_html=True)
+                            
                             with st.expander("View Content"):
-                                st.text(r.get('content', 'No content available'))
+                                content_raw = r.get('content', 'No content available')
+                                content_html = highlight_text(content_raw, query)
+                                st.markdown(content_html, unsafe_allow_html=True)
                             
                             if debug_mode:
                                 st.write(f"Source: {r.get('source', 'unknown')}")

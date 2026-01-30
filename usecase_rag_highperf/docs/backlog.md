@@ -144,6 +144,15 @@ End-user가 체감할 수 있는 검색 데모 애플리케이션(FastAPI + Stre
     - 검색 결과에 Vector Score, Distance 외에 사용자가 인식할 수 있는 원본 콘텐츠(본문 텍스트 등)를 함께 표시
     - 필요 시 `SearchResult` 스키마 및 UI 레이아웃 조정
 
+- [x] **DEMO-011: 검색 결과 키워드 하이라이팅 (Keyword Highlighting)**
+    - 검색 결과 표시 시, 사용자가 입력한 검색어(Query)에 포함된 키워드가 본문(Chunk Text)에 존재할 경우 하이라이팅 처리
+    - Streamlit UI (`st.markdown`의 background-color 활용 등) 또는 Backend API에서 전처리
+    - Vector Search의 "Explainability" 보완 목적
+
+- [x] **DEMO-012: Hybrid Search BM25 Score 버그 수정**
+    - `search_valkey.py`와 `hybrid.py` 간 Score Key 불일치(`bm25_simulated` vs `bm25`) 수정
+    - 일관된 Key 사용(`bm25`)으로 Hybrid Search 시 BM25 점수가 0으로 나오는 문제 해결
+
 ## Epic 7: Pattern B Incremental (Postgres SoR)
 기존 Pattern A(Valkey-centric) 구조 위에 Postgres를 Embedding SoR로 도입하여 안정성을 강화하고, Engine 선택 기능을 추가합니다.
 
